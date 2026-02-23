@@ -1,0 +1,12 @@
+[00:00:15.720] Server  LOG     ✓ Ready in 11.6s
+[00:00:19.015] Server  LOG     ○ Compiling / ...
+[00:01:31.413] Server  LOG     ✓ Finished writing to filesystem cache in 22.3s
+[00:01:31.786] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:01:37.563] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:01:37.567] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[00:01:37.567] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3000/","r":"","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1771864233046} /_vercel/insights/view
+[00:01:37.567] Browser LOG     %c[Vercel Speed Insights]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:01:47.602] Browser LOG     %c[Vercel Speed Insights]%c [vitals] color: rgb(120, 120, 120) color: inherit {"metrics":[{"href":"http://localhost:3000/","id":"v3-1771864233072-1763332249307","route":"/","type":"TTFB","value":67822}],"scriptVersion":"0.1.3","sdkName":"@vercel/speed-insights/next","sdkVersion":"1.3.1","speed":"4g"} /_vercel/speed-insights/vitals
+[00:01:57.663] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3000/notices color: rgb(120, 120, 120) color: inherit {"dp":"/notices","o":"http://localhost:3000/notices","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1771864255440} /_vercel/insights/view
+[00:02:05.201] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3000/admin color: rgb(120, 120, 120) color: inherit {"dp":"/admin","o":"http://localhost:3000/admin","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1771864262959} /_vercel/insights/view
+[00:02:14.480] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3000/admin/settings color: rgb(120, 120, 120) color: inherit {"dp":"/admin/settings","o":"http://localhost:3000/admin/settings","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1771864272247} /_vercel/insights/view
