@@ -1,5 +1,5 @@
 {
-    "name": "jgec-helper-monorepo",
+    "name": "jgechelper",
     "private": true,
     "workspaces": [
         "web"

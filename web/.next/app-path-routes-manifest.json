@@ -1,0 +1,16 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/admin/notices/page": "/admin/notices",
+  "/admin/page": "/admin",
+  "/admin/resources/page": "/admin/resources",
+  "/admin/settings/page": "/admin/settings",
+  "/admin/users/page": "/admin/users",
+  "/api/upload/route": "/api/upload",
+  "/favicon.ico/route": "/favicon.ico",
+  "/login/page": "/login",
+  "/notices/page": "/notices",
+  "/page": "/",
+  "/register/page": "/register",
+  "/resources/page": "/resources"
+}
