@@ -1,47 +1,36 @@
-# 🎓 JGEC Helper
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-JGEC Helper is a comprehensive web platform designed specifically for the students of **Jalpaiguri Government Engineering College (JGEC)**.  
+## Getting Started
 
-The primary goal of this project is to centralize academic resources, official notices, and essential information for the college community.
+First, run the development server:
 
----
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-## 🚀 Key Features
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### 📚 Academic Resources
-Access to study materials, notes, and important documents for various departments, including Mechanical Engineering.
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-### 🛠 Admin Dashboard
-A powerful admin panel for:
-- Managing academic resources  
-- Uploading notices  
-- Updating content in real-time  
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-### 📢 Live Notice Board
-Stay updated with the latest college announcements and news in real-time.
+## Learn More
 
-### 🎨 Modern UI
-- Fully responsive design  
-- Clean and user-friendly interface  
-- Optimized for mobile and desktop  
+To learn more about Next.js, take a look at the following resources:
 
----
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-## 🛠 Tech Stack
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-This project is built using modern web technologies:
+## Deploy on Vercel
 
-- **Framework:** Next.js / React  
-- **Styling:** Tailwind CSS  
-- **Hosting:** Vercel  
-- **Version Control:** Git & GitHub  
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
----
-
-## 💻 Local Setup
-
-Follow these steps to run the project on your local machine:
-
-### 1️⃣ Clone the Repository
-
-https://github.com/PABITRA-420/jgec-helper.git
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
