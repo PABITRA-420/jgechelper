@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { LayoutDashboard, Upload, FileText, Users, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 export default function AdminLayout({
@@ -13,6 +13,7 @@ export default function AdminLayout({
 }) {
     const { user, role, loading } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         if (!loading) {
@@ -45,35 +46,50 @@ export default function AdminLayout({
                 <nav className="space-y-1 p-4">
                     <Link
                         href="/admin"
-                        className="flex items-center gap-3 rounded-lg bg-blue-50 px-4 py-3 text-sm font-medium text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                        className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${pathname === "/admin"
+                                ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                                : "text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                            }`}
                     >
                         <LayoutDashboard className="h-5 w-5" />
                         Dashboard
                     </Link>
                     <Link
                         href="/admin/resources"
-                        className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                        className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${pathname === "/admin/resources" || pathname?.startsWith("/admin/resources/")
+                                ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                                : "text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                            }`}
                     >
                         <Upload className="h-5 w-5" />
                         Resources
                     </Link>
                     <Link
                         href="/admin/notices"
-                        className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                        className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${pathname === "/admin/notices" || pathname?.startsWith("/admin/notices/")
+                                ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                                : "text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                            }`}
                     >
                         <FileText className="h-5 w-5" />
                         Notices
                     </Link>
                     <Link
                         href="/admin/users"
-                        className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                        className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${pathname === "/admin/users" || pathname?.startsWith("/admin/users/")
+                                ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                                : "text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                            }`}
                     >
                         <Users className="h-5 w-5" />
                         Users
                     </Link>
                     <Link
                         href="/admin/settings"
-                        className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                        className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium ${pathname === "/admin/settings" || pathname?.startsWith("/admin/settings/")
+                                ? "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
+                                : "text-zinc-600 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                            }`}
                     >
                         <Settings className="h-5 w-5" />
                         Settings
