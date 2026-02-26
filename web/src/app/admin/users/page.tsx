@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Shield, ShieldAlert, User as UserIcon } from "lucide-react";
+import { Shield, ShieldAlert, User as UserIcon, ArrowUpDown } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 type CustomUser = {
@@ -21,6 +21,7 @@ export default function AdminUsersPage() {
     const [users, setUsers] = useState<CustomUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState<string | null>(null);
+    const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name" | "status">("newest");
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -59,9 +60,24 @@ export default function AdminUsersPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Users</h1>
-                <p className="text-muted-foreground">Manage student and faculty accounts.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Users</h1>
+                    <p className="text-muted-foreground">Manage student and faculty accounts.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-zinc-500 font-medium">Sort by:</span>
+                    <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as any)}
+                        className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                    >
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="name">Name (A-Z)</option>
+                        <option value="status">Status</option>
+                    </select>
+                </div>
             </div>
 
             <div className="rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 overflow-hidden">
@@ -71,6 +87,7 @@ export default function AdminUsersPage() {
                             <tr>
                                 <th className="px-6 py-4 font-medium">User</th>
                                 <th className="px-6 py-4 font-medium">Contact</th>
+                                <th className="px-6 py-4 font-medium">Joined</th>
                                 <th className="px-6 py-4 font-medium">Status / Role</th>
                                 <th className="px-6 py-4 font-medium text-right">Actions</th>
                             </tr>
@@ -86,16 +103,28 @@ export default function AdminUsersPage() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4"><div className="h-4 w-32 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" /></td>
+                                        <td className="px-6 py-4"><div className="h-4 w-24 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" /></td>
                                         <td className="px-6 py-4"><div className="h-6 w-16 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-800" /></td>
                                         <td className="px-6 py-4 text-right"><div className="ml-auto h-8 w-20 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" /></td>
                                     </tr>
                                 ))
                             ) : users.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">No users found.</td>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">No users found.</td>
                                 </tr>
                             ) : (
-                                users.map((user) => (
+                                [...users].sort((a, b) => {
+                                    if (sortBy === "name") {
+                                        const nameA = a.displayName || a.email.split('@')[0];
+                                        const nameB = b.displayName || b.email.split('@')[0];
+                                        return nameA.localeCompare(nameB);
+                                    }
+                                    if (sortBy === "status") return (a.role + a.status).localeCompare(b.role + b.status);
+
+                                    const timeA = a.createdAt?.seconds || 0;
+                                    const timeB = b.createdAt?.seconds || 0;
+                                    return sortBy === "newest" ? timeB - timeA : timeA - timeB;
+                                }).map((user) => (
                                     <tr key={user.id} className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
@@ -106,10 +135,19 @@ export default function AdminUsersPage() {
                                                         <UserIcon className="h-5 w-5 text-muted-foreground" />
                                                     </div>
                                                 )}
-                                                <span className="font-medium">{user.displayName || "Unknown User"}</span>
+                                                <span className="font-medium">{user.displayName || user.email.split('@')[0]}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-muted-foreground">{user.email}</td>
+                                        <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400">
+                                            {user.createdAt ? (
+                                                new Date(user.createdAt.seconds * 1000).toLocaleDateString('en-US', {
+                                                    month: 'short', day: 'numeric', year: 'numeric'
+                                                })
+                                            ) : (
+                                                "Unknown date"
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col gap-1">
                                                 {user.role === "admin" ? (
