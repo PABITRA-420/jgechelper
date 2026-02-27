@@ -77,16 +77,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         const isAdmin = currentUser.email && ADMIN_EMAILS.includes(currentUser.email);
                         const initialRole: UserRole = isAdmin ? "admin" : "user";
 
-                        // Create User Document
-                        await setDoc(userRef, {
+                        const newUserData: any = {
                             uid: currentUser.uid,
                             email: currentUser.email,
-                            displayName: currentUser.displayName,
-                            photoURL: currentUser.photoURL,
                             role: initialRole,
                             createdAt: serverTimestamp(),
                             lastLogin: serverTimestamp(),
-                        });
+                        };
+
+                        if (currentUser.displayName) newUserData.displayName = currentUser.displayName;
+                        if (currentUser.photoURL) newUserData.photoURL = currentUser.photoURL;
+
+                        // Create User Document
+                        await setDoc(userRef, newUserData, { merge: true });
 
                         setRole(initialRole);
                     }

@@ -144,7 +144,7 @@ export default function RegisterPage() {
                         className="w-full rounded-lg bg-foreground py-2.5 text-center text-sm font-medium text-background transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
                         disabled={loading}
                     >
-                        {loading ? "Creating Account..." : "Create Account (Use Google)"}
+                        {loading ? "Creating Account..." : "Create Account"}
                     </button>
                 </form>
 
