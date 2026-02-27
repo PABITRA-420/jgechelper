@@ -77,16 +77,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         const isAdmin = currentUser.email && ADMIN_EMAILS.includes(currentUser.email);
                         const initialRole: UserRole = isAdmin ? "admin" : "user";
 
-                        // Create User Document
-                        await setDoc(userRef, {
+                        const newUserData: any = {
                             uid: currentUser.uid,
                             email: currentUser.email,
-                            displayName: currentUser.displayName,
-                            photoURL: currentUser.photoURL,
                             role: initialRole,
                             createdAt: serverTimestamp(),
                             lastLogin: serverTimestamp(),
-                        });
+                        };
+
+                        const tempName = localStorage.getItem("tempDisplayName");
+                        if (currentUser.displayName) {
+                            newUserData.displayName = currentUser.displayName;
+                        } else if (tempName) {
+                            newUserData.displayName = tempName;
+                        }
+
+                        if (currentUser.photoURL) newUserData.photoURL = currentUser.photoURL;
+
+                        // Create User Document
+                        await setDoc(userRef, newUserData, { merge: true });
+
+                        // Clean up localStorage
+                        if (tempName) {
+                            localStorage.removeItem("tempDisplayName");
+                        }
 
                         setRole(initialRole);
                     }
@@ -128,12 +142,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const registerWithEmail = async (name: string, email: string, pass: string) => {
         try {
+            // Save the name temporarily in localStorage before creating the user
+            localStorage.setItem("tempDisplayName", name);
             const result = await createUserWithEmailAndPassword(auth, email, pass);
             await updateProfile(result.user, { displayName: name });
-
-            // Trigger the onAuthStateChanged Logic to save user to Firestore
-            // ...handled automatically by the useEffect hook when it detects the new user
-
+            // Remove the manual setDoc here to avoid the race condition completely
         } catch (error) {
             console.error("Error registering", error);
             throw error;
