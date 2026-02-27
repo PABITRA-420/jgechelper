@@ -132,7 +132,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await updateProfile(result.user, { displayName: name });
 
             // Trigger the onAuthStateChanged Logic to save user to Firestore
-            // ...handled automatically by the useEffect hook when it detects the new user
+            // Update Firestore document manually since onAuthStateChanged might fire before updateProfile finishes
+            const userRef = doc(db, "users", result.user.uid);
+            await setDoc(userRef, { displayName: name }, { merge: true });
 
         } catch (error) {
             console.error("Error registering", error);

@@ -38,11 +38,39 @@ export default function RegisterPage() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+
+        // Password Validation
+        if (password.length < 10) {
+            setError("Password must be at least 10 characters long.");
+            setLoading(false);
+            return;
+        }
+        if (!/[A-Z]/.test(password)) {
+            setError("Password must contain at least one uppercase letter.");
+            setLoading(false);
+            return;
+        }
+        if (!/[a-z]/.test(password)) {
+            setError("Password must contain at least one lowercase letter.");
+            setLoading(false);
+            return;
+        }
+        if (!/[0-9]/.test(password)) {
+            setError("Password must contain at least one number.");
+            setLoading(false);
+            return;
+        }
+        if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+            setError("Password must contain at least one special character.");
+            setLoading(false);
+            return;
+        }
+
         try {
             await registerWithEmail(name, email, password);
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            setError("Registration failed. Try again.");
+            setError(err?.message || "Registration failed. Try again.");
         } finally {
             setLoading(false);
         }
