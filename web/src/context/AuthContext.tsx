@@ -85,11 +85,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             lastLogin: serverTimestamp(),
                         };
 
-                        if (currentUser.displayName) newUserData.displayName = currentUser.displayName;
+                        const tempName = localStorage.getItem("tempDisplayName");
+                        if (currentUser.displayName) {
+                            newUserData.displayName = currentUser.displayName;
+                        } else if (tempName) {
+                            newUserData.displayName = tempName;
+                        }
+
                         if (currentUser.photoURL) newUserData.photoURL = currentUser.photoURL;
 
                         // Create User Document
                         await setDoc(userRef, newUserData, { merge: true });
+
+                        // Clean up localStorage
+                        if (tempName) {
+                            localStorage.removeItem("tempDisplayName");
+                        }
 
                         setRole(initialRole);
                     }
@@ -131,14 +142,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const registerWithEmail = async (name: string, email: string, pass: string) => {
         try {
+            // Save the name temporarily in localStorage before creating the user
+            localStorage.setItem("tempDisplayName", name);
             const result = await createUserWithEmailAndPassword(auth, email, pass);
             await updateProfile(result.user, { displayName: name });
-
-            // Trigger the onAuthStateChanged Logic to save user to Firestore
-            // Update Firestore document manually since onAuthStateChanged might fire before updateProfile finishes
-            const userRef = doc(db, "users", result.user.uid);
-            await setDoc(userRef, { displayName: name }, { merge: true });
-
+            // Remove the manual setDoc here to avoid the race condition completely
         } catch (error) {
             console.error("Error registering", error);
             throw error;
