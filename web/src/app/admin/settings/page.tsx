@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 
@@ -52,7 +52,18 @@ export default function AdminSettingsPage() {
 
         setSaving(true);
         try {
-            await setDoc(doc(db, "settings", "general"), settings, { merge: true });
+            const dataToSave = {
+                ...settings,
+                maintenance_mode: settings.maintenanceMode,
+                estimated_end_time: settings.maintenanceEndTime,
+                maintenance_started_at: settings.maintenanceMode ? serverTimestamp() : null,
+            };
+
+            // Clean up camelCase duplicates if desired, but Firestore will just merge.
+            delete (dataToSave as any).maintenanceMode;
+            delete (dataToSave as any).maintenanceEndTime;
+
+            await setDoc(doc(db, "settings", "general"), dataToSave, { merge: true });
             toast.success("Settings saved successfully.");
         } catch (error) {
             console.error("Error saving settings:", error);

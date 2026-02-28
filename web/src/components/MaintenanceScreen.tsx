@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Wrench, Mail, Clock, AlertTriangle } from "lucide-react";
+import { Wrench, Mail, Clock, AlertTriangle, RefreshCw } from "lucide-react";
 
 interface MaintenanceScreenProps {
     contactEmail?: string;
@@ -97,14 +97,23 @@ export default function MaintenanceScreen({ contactEmail = "admin@jgec.ac.in", e
                         </div>
                     </div>
 
-                    <a
-                        href={`mailto:${contactEmail}`}
-                        className="group relative flex items-center justify-center gap-2 rounded-full bg-blue-600 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-blue-500 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 border border-blue-400/20 overflow-hidden"
-                    >
-                        <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[100%] group-hover:animate-[shimmer_1.5s_infinite]" />
-                        <Mail className="h-4 w-4 relative z-10" />
-                        <span className="relative z-10">Contact Support</span>
-                    </a>
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="group relative flex items-center justify-center gap-2 rounded-full bg-zinc-800 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-zinc-700 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] active:scale-95 border border-zinc-700/50"
+                        >
+                            <RefreshCw className="h-4 w-4 text-zinc-400 group-hover:text-white group-active:rotate-180 transition-all duration-300" />
+                            <span>Refresh</span>
+                        </button>
+                        <a
+                            href={`mailto:${contactEmail}`}
+                            className="group relative flex items-center justify-center gap-2 rounded-full bg-blue-600 px-8 py-3.5 text-sm font-semibold text-white transition-all hover:bg-blue-500 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 border border-blue-400/20 overflow-hidden"
+                        >
+                            <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[100%] group-hover:animate-[shimmer_1.5s_infinite]" />
+                            <Mail className="h-4 w-4 relative z-10" />
+                            <span className="relative z-10">Contact Support</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
