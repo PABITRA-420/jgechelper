@@ -39,6 +39,17 @@ export default function AdminSettingsPage() {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validate estimated end time
+        if (settings.maintenanceMode && settings.maintenanceEndTime) {
+            const endTime = new Date(settings.maintenanceEndTime).getTime();
+            const now = new Date().getTime();
+            if (endTime <= now) {
+                toast.error("Estimated end time cannot be in the past.");
+                return; // Stop save operation
+            }
+        }
+
         setSaving(true);
         try {
             await setDoc(doc(db, "settings", "general"), settings, { merge: true });
