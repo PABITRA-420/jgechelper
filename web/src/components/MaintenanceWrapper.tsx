@@ -71,6 +71,7 @@ export default function MaintenanceWrapper({ children }: MaintenanceWrapperProps
     // 1. Initial Load: Prevent flashing content before settings and arrival time are loaded
     if (settingsLoading || arrivalTime === null) return null;
 
+
     // 2. Auth Loading: If maintenance is ON, we must wait for auth to finish loading 
     //    so we don't accidentally show the maintenance screen to an admin before Firebase 
     //    confirms their role.
@@ -111,6 +112,7 @@ export default function MaintenanceWrapper({ children }: MaintenanceWrapperProps
 
     // 5. Existing Users vs New Users Logic (General Users)
     const isNewVisitor = maintenanceStartedAt ? arrivalTime > maintenanceStartedAt : false;
+
 
     if (maintenanceMode) {
         if (isNewVisitor) {
