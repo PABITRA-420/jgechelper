@@ -4,7 +4,7 @@ interface ResourceProps {
     title: string;
     subject: string;
     semester: string;
-    type: "Question Paper" | "Notes" | "Syllabus";
+    type: "Question Paper" | "Notes" | "Routine" | "Others";
     branch: string;
     date: string;
     downloadURL?: string;

@@ -1,14 +1,15 @@
 "use client";
 
 import { UploadCloud, X, FileText, CheckCircle, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, updateDoc } from "firebase/firestore";
 import { db, storage } from "@/lib/firebase";
 
-export function UploadForm() {
+export function UploadForm({ editingResource, onClearEdit }: { editingResource?: any, onClearEdit?: () => void }) {
     const [dragActive, setDragActive] = useState(false);
     const [file, setFile] = useState<File | null>(null);
+    const [existingAttachment, setExistingAttachment] = useState<{ url: string | null, name: string | null }>({ url: null, name: null });
     const [uploading, setUploading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -19,6 +20,37 @@ export function UploadForm() {
     const [branch, setBranch] = useState("CSE");
     const [semester, setSemester] = useState("1st Semester");
     const [type, setType] = useState("Question Paper");
+
+    useEffect(() => {
+        if (editingResource) {
+            setTitle(editingResource.title || "");
+            setSubject(editingResource.subject || "");
+            setBranch(editingResource.branch || "CSE");
+            setSemester(editingResource.semester || "1st Semester");
+            setType(editingResource.type || "Question Paper");
+            setExistingAttachment({
+                url: editingResource.downloadURL || null,
+                name: editingResource.fileName || null
+            });
+            setFile(null);
+            setSuccess(false);
+            setError(null);
+        } else {
+            resetForm();
+        }
+    }, [editingResource]);
+
+    const resetForm = () => {
+        setTitle("");
+        setSubject("");
+        setBranch("CSE");
+        setSemester("1st Semester");
+        setType("Question Paper");
+        setFile(null);
+        setExistingAttachment({ url: null, name: null });
+        setSuccess(false);
+        setError(null);
+    };
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
@@ -36,6 +68,7 @@ export function UploadForm() {
         setDragActive(false);
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
             setFile(e.dataTransfer.files[0]);
+            setExistingAttachment({ url: null, name: null });
         }
     };
 
@@ -43,6 +76,7 @@ export function UploadForm() {
         e.preventDefault();
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
+            setExistingAttachment({ url: null, name: null });
         }
     };
 
@@ -51,47 +85,67 @@ export function UploadForm() {
         setError(null);
         setSuccess(false);
 
-        if (!file || !title || !subject) {
-            setError("Please fill in all fields and select a file.");
+        if ((!file && !existingAttachment.url) || !title || !subject) {
+            setError("Please fill in all fields and provide a file.");
             return;
         }
 
         setUploading(true);
 
         try {
-            // 1. Upload File to Vercel Blob via Next.js API
-            const uploadResponse = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
-                method: "POST",
-                body: file,
-            });
+            let currentDownloadURL = existingAttachment.url;
+            let currentFileName = existingAttachment.name;
 
-            if (!uploadResponse.ok) {
-                const errorData = await uploadResponse.json();
-                throw new Error(errorData.error || "Failed to upload file");
+            if (file) {
+                // 1. Upload File to Vercel Blob via Next.js API
+                const uploadResponse = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+                    method: "POST",
+                    body: file,
+                });
+
+                if (!uploadResponse.ok) {
+                    const errorData = await uploadResponse.json();
+                    throw new Error(errorData.error || "Failed to upload file");
+                }
+
+                const blob = await uploadResponse.json();
+                currentDownloadURL = blob.url;
+                currentFileName = file.name;
             }
 
-            const blob = await uploadResponse.json();
-            const downloadURL = blob.url;
+            if (editingResource) {
+                // Update Existing Resource
+                await updateDoc(doc(db, "resources", editingResource.id), {
+                    title,
+                    subject,
+                    branch,
+                    semester,
+                    type,
+                    downloadURL: currentDownloadURL,
+                    fileName: currentFileName,
+                });
 
-            // 2. Save Metadata to Firestore
-            await addDoc(collection(db, "resources"), {
-                title,
-                subject,
-                branch,
-                semester,
-                type,
-                downloadURL,
-                fileName: file.name,
-                createdAt: serverTimestamp(),
-            });
+                setSuccess(true);
+                if (onClearEdit) onClearEdit();
+            } else {
+                // 2. Save Metadata to Firestore
+                await addDoc(collection(db, "resources"), {
+                    title,
+                    subject,
+                    branch,
+                    semester,
+                    type,
+                    downloadURL: currentDownloadURL,
+                    fileName: currentFileName,
+                    createdAt: serverTimestamp(),
+                });
 
-            setSuccess(true);
-            setFile(null);
-            setTitle("");
-            setSubject("");
+                setSuccess(true);
+                resetForm();
+            }
         } catch (err) {
             console.error("Upload failed", err);
-            setError("Failed to upload resource. Please try again.");
+            setError(`Failed to ${editingResource ? 'update' : 'upload'} resource. Please try again.`);
         } finally {
             setUploading(false);
         }
@@ -99,7 +153,14 @@ export function UploadForm() {
 
     return (
         <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <h3 className="mb-4 text-lg font-semibold">Upload Resource</h3>
+            <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold">{editingResource ? "Edit Resource" : "Upload Resource"}</h3>
+                {editingResource && onClearEdit && (
+                    <button type="button" onClick={onClearEdit} className="text-sm text-muted-foreground hover:text-foreground">
+                        Cancel Edit
+                    </button>
+                )}
+            </div>
 
             <form className="space-y-4" onSubmit={handleUpload}>
                 <div className="grid gap-4 md:grid-cols-2">
@@ -162,7 +223,8 @@ export function UploadForm() {
                         >
                             <option className="bg-white text-black dark:bg-zinc-900 dark:text-white">Question Paper</option>
                             <option className="bg-white text-black dark:bg-zinc-900 dark:text-white">Notes</option>
-                            <option className="bg-white text-black dark:bg-zinc-900 dark:text-white">Syllabus</option>
+                            <option className="bg-white text-black dark:bg-zinc-900 dark:text-white">Routine</option>
+                            <option className="bg-white text-black dark:bg-zinc-900 dark:text-white">Others</option>
                         </select>
                     </div>
                 </div>
@@ -183,11 +245,11 @@ export function UploadForm() {
                         accept=".pdf,.doc,.docx"
                     />
 
-                    {file ? (
+                    {file || existingAttachment.url ? (
                         <div className="flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">
                             <FileText className="h-4 w-4 text-blue-500" />
-                            {file.name}
-                            <button onClick={(e) => { e.preventDefault(); setFile(null); }} className="rounded-full p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                            {file ? file.name : existingAttachment.name}
+                            <button onClick={(e) => { e.preventDefault(); setFile(null); setExistingAttachment({ url: null, name: null }); }} className="rounded-full p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800">
                                 <X className="h-4 w-4 text-red-500" />
                             </button>
                         </div>
@@ -212,7 +274,7 @@ export function UploadForm() {
                 {success && (
                     <div className="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-600 dark:bg-green-900/10 dark:text-green-400">
                         <CheckCircle className="h-4 w-4" />
-                        Resource uploaded successfully!
+                        {editingResource ? "Resource updated successfully!" : "Resource uploaded successfully!"}
                     </div>
                 )}
 
@@ -220,7 +282,7 @@ export function UploadForm() {
                     disabled={uploading}
                     className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                    {uploading ? "Uploading..." : "Upload Resource"}
+                    {uploading ? "Saving..." : (editingResource ? "Update Resource" : "Upload Resource")}
                 </button>
             </form>
         </div>

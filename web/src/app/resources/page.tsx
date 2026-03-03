@@ -13,12 +13,13 @@ interface Resource {
     title: string;
     subject: string;
     semester: string;
-    type: "Question Paper" | "Notes" | "Syllabus";
+    type: "Question Paper" | "Notes" | "Routine" | "Others";
     branch: string;
     date: string;
     downloadURL?: string;
     createdAt: any;
     visible?: boolean;
+    orderSequence?: number;
 }
 
 const BRANCHES = [
@@ -39,6 +40,7 @@ export default function ResourcesPage() {
     const [view, setView] = useState<"branches" | "semesters" | "resources">("branches");
     const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
     const [selectedSemester, setSelectedSemester] = useState<string | null>(null);
+    const [selectedType, setSelectedType] = useState<string>("All");
 
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(false);
@@ -74,7 +76,15 @@ export default function ResourcesPage() {
                     ...doc.data(),
                     date: doc.data().createdAt?.toDate().toLocaleDateString() || "Unknown Date"
                 })) as Resource[])
-                .filter((res) => res.visible !== false); // Default true
+                .filter((res) => res.visible !== false) // Default true
+                .sort((a, b) => {
+                    const orderA = a.orderSequence ?? Number.MAX_SAFE_INTEGER;
+                    const orderB = b.orderSequence ?? Number.MAX_SAFE_INTEGER;
+                    if (orderA !== orderB) return orderA - orderB;
+                    const timeA = a.createdAt?.toMillis() || 0;
+                    const timeB = b.createdAt?.toMillis() || 0;
+                    return timeB - timeA;
+                });
 
             setResources(fetchedResources);
         } catch (error) {
@@ -188,15 +198,31 @@ export default function ResourcesPage() {
                 {view === "resources" && (
                     <div className="space-y-6">
                         {resources.length > 0 && (
-                            <div className="relative max-w-xl">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <input
-                                    type="text"
-                                    placeholder="Search resources..."
-                                    className="w-full rounded-xl border-0 bg-white py-3 pl-10 pr-4 shadow-sm ring-1 ring-inset ring-zinc-200 focus:ring-2 focus:ring-inset focus:ring-blue-500 dark:bg-black dark:ring-zinc-800"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex flex-wrap gap-2">
+                                    {["All", "Question Paper", "Notes", "Routine", "Others"].map((t) => (
+                                        <button
+                                            key={t}
+                                            onClick={() => setSelectedType(t)}
+                                            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${selectedType === t
+                                                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                                                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                                                }`}
+                                        >
+                                            {t}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="relative w-full sm:max-w-xs">
+                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search resources..."
+                                        className="w-full rounded-xl border-0 bg-white py-2.5 pl-10 pr-4 shadow-sm ring-1 ring-inset ring-zinc-200 focus:ring-2 focus:ring-inset focus:ring-blue-500 dark:bg-black dark:ring-zinc-800"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                </div>
                             </div>
                         )}
 
@@ -209,6 +235,7 @@ export default function ResourcesPage() {
                         ) : resources.length > 0 ? (
                             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                                 {resources
+                                    .filter(r => selectedType === "All" || r.type === selectedType)
                                     .filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()) || r.subject.toLowerCase().includes(searchQuery.toLowerCase()))
                                     .map((resource) => (
                                         <ResourceCard key={resource.id} resource={resource} />
