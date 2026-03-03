@@ -1,17 +1,19 @@
 import { Calendar, AlertCircle, Paperclip, ExternalLink } from "lucide-react";
 
 interface NoticeProps {
-    id: number;
+    id: number | string;
     title: string;
     date: string;
     category: "General" | "Exam" | "Holiday" | "Urgent";
     description: string;
     attachmentUrl?: string;
     attachmentName?: string;
+    createdAt?: number;
 }
 
 export function NoticeCard({ notice }: { notice: NoticeProps }) {
     const isUrgent = notice.category === "Urgent";
+    const isNew = notice.createdAt ? (Date.now() - notice.createdAt) < 7 * 24 * 60 * 60 * 1000 : false;
 
     return (
         <div className={`glass relative overflow-hidden rounded-xl border p-6 transition-all hover:bg-secondary/50 ${isUrgent ? "border-red-500/50 bg-red-500/5" : "border-border"}`}>
@@ -24,6 +26,11 @@ export function NoticeCard({ notice }: { notice: NoticeProps }) {
                             }`}>
                             {notice.category}
                         </span>
+                        {isNew && (
+                            <span className="animate-pulse rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white shadow-sm">
+                                New
+                            </span>
+                        )}
                         <span className="flex items-center text-xs text-muted-foreground">
                             <Calendar className="mr-1 h-3 w-3" />
                             {notice.date}

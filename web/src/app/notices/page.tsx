@@ -13,6 +13,9 @@ interface Notice {
     category: "General" | "Exam" | "Holiday" | "Urgent";
     description: string;
     priority?: "High" | "Normal";
+    createdAt?: number;
+    attachmentUrl?: string;
+    attachmentName?: string;
 }
 
 export default function NoticesPage() {
@@ -39,6 +42,7 @@ export default function NoticesPage() {
                         id: data.id,
                         ...data,
                         date: data.createdAt?.toDate().toLocaleDateString() || "Unknown Date",
+                        createdAt: data.createdAt?.toMillis() || 0,
                         category: data.category || "General",
                     })) as unknown as Notice[];
 
