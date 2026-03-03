@@ -68,9 +68,14 @@ export default function MaintenanceWrapper({ children }: MaintenanceWrapperProps
         }
     }, []);
 
-    // 1. Initial Load: Prevent flashing content before settings and arrival time are loaded
-    if (settingsLoading || arrivalTime === null) return null;
-
+    // 1. Initial Load: Show a loading state instead of returning null to unblock FCP / SSR.
+    if (settingsLoading || arrivalTime === null) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+            </div>
+        );
+    }
 
     // 2. Auth Loading: If maintenance is ON, we must wait for auth to finish loading 
     //    so we don't accidentally show the maintenance screen to an admin before Firebase 
