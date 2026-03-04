@@ -1,4 +1,5 @@
-import { FileText, Download, Eye } from "lucide-react";
+import { FileText, Download, Eye, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 interface ResourceProps {
     title: string;
@@ -11,6 +12,64 @@ interface ResourceProps {
 }
 
 export function ResourceCard({ resource }: { resource: ResourceProps }) {
+    const [downloading, setDownloading] = useState(false);
+
+    const handleDownload = async () => {
+        if (!resource.downloadURL) return;
+
+        try {
+            setDownloading(true);
+            const response = await fetch(resource.downloadURL);
+            const blob = await response.blob();
+
+            // Create a temporary link to trigger the download
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+
+            // Extract filename from URL or use a fallback
+            let filename = resource.title;
+            try {
+                const urlParts = resource.downloadURL.split('/');
+                const lastPart = urlParts[urlParts.length - 1];
+                // Clean up any query parameters from the filename
+                filename = decodeURIComponent(lastPart.split('?')[0]) || resource.title;
+            } catch (e) {
+                console.error("Could not parse filename", e);
+            }
+            // Add correct extension if it doesn't have one
+            if (!filename.includes('.')) {
+                const mimeExtMap: Record<string, string> = {
+                    'application/pdf': '.pdf',
+                    'image/jpeg': '.jpg',
+                    'image/png': '.png',
+                    'image/webp': '.webp',
+                    'application/msword': '.doc',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+                    'application/vnd.ms-excel': '.xls',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+                    'text/plain': '.txt'
+                };
+                const ext = mimeExtMap[blob.type] || '';
+                filename += ext;
+            }
+
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+
+            // Cleanup
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error("Download failed", error);
+            // Fallback to opening in new tab if direct download fails due to CORS
+            window.open(resource.downloadURL, '_blank');
+        } finally {
+            setDownloading(false);
+        }
+    };
+
     return (
         <div className="glass group relative overflow-hidden rounded-xl p-5 transition-all hover:-translate-y-1 hover:shadow-xl dark:bg-zinc-900/50">
             <div className="flex items-start justify-between">
@@ -35,14 +94,14 @@ export function ResourceCard({ resource }: { resource: ResourceProps }) {
             </div>
 
             <div className="mt-6 flex items-center gap-3">
-                <a
-                    href={resource.downloadURL}
-                    download
-                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-foreground py-2 text-sm font-medium text-background transition-transform active:scale-95"
+                <button
+                    onClick={handleDownload}
+                    disabled={downloading || !resource.downloadURL}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-foreground py-2 text-sm font-medium text-background transition-transform active:scale-95 disabled:opacity-70 disabled:active:scale-100"
                 >
-                    <Download className="h-4 w-4" />
-                    Download
-                </a>
+                    {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                    {downloading ? "Downloading..." : "Download"}
+                </button>
                 <a
                     href={resource.downloadURL}
                     target="_blank"
