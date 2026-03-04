@@ -205,8 +205,8 @@ export default function ResourcesPage() {
                                             key={t}
                                             onClick={() => setSelectedType(t)}
                                             className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${selectedType === t
-                                                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                                                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                                                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                                                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
                                                 }`}
                                         >
                                             {t}
@@ -236,7 +236,7 @@ export default function ResourcesPage() {
                             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                                 {resources
                                     .filter(r => selectedType === "All" || r.type === selectedType)
-                                    .filter(r => r.title.toLowerCase().includes(searchQuery.toLowerCase()) || r.subject.toLowerCase().includes(searchQuery.toLowerCase()))
+                                    .filter(r => (r.title || "").toLowerCase().includes(searchQuery.toLowerCase()) || (r.subject || "").toLowerCase().includes(searchQuery.toLowerCase()))
                                     .map((resource) => (
                                         <ResourceCard key={resource.id} resource={resource} />
                                     ))}
