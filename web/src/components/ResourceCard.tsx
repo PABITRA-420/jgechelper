@@ -37,16 +37,21 @@ export function ResourceCard({ resource }: { resource: ResourceProps }) {
             <div className="mt-6 flex items-center gap-3">
                 <a
                     href={resource.downloadURL}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    download
                     className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-foreground py-2 text-sm font-medium text-background transition-transform active:scale-95"
                 >
                     <Download className="h-4 w-4" />
                     Download
                 </a>
-                <button className="flex items-center justify-center rounded-lg border border-input bg-background/50 p-2 text-foreground transition-colors hover:bg-secondary">
+                <a
+                    href={resource.downloadURL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center rounded-lg border border-input bg-background/50 p-2 text-foreground transition-colors hover:bg-secondary"
+                    title="View Resource"
+                >
                     <Eye className="h-4 w-4" />
-                </button>
+                </a>
             </div>
         </div>
     );
