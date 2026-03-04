@@ -13,7 +13,19 @@ interface NoticeProps {
 
 export function NoticeCard({ notice }: { notice: NoticeProps }) {
     const isUrgent = notice.category === "Urgent";
-    const isNew = notice.createdAt ? (Date.now() - notice.createdAt) < 7 * 24 * 60 * 60 * 1000 : false;
+    const isNew = (() => {
+        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+        let diff = -1;
+        if (notice.createdAt && notice.createdAt > 0) {
+            diff = Date.now() - notice.createdAt;
+        } else if (notice.date && notice.date !== "Unknown Date") {
+            const parsed = new Date(notice.date).getTime();
+            if (!isNaN(parsed)) {
+                diff = Date.now() - parsed;
+            }
+        }
+        return diff >= -86400000 && diff < sevenDaysMs;
+    })();
 
     return (
         <div className={`glass relative overflow-hidden rounded-xl border p-6 transition-all hover:bg-secondary/50 ${isUrgent ? "border-red-500/50 bg-red-500/5" : "border-border"}`}>
@@ -27,7 +39,7 @@ export function NoticeCard({ notice }: { notice: NoticeProps }) {
                             {notice.category}
                         </span>
                         {isNew && (
-                            <span className="animate-pulse rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white shadow-sm">
+                            <span className="animate-beat rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm">
                                 New
                             </span>
                         )}
