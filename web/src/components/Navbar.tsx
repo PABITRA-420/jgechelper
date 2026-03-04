@@ -48,14 +48,16 @@ export function Navbar() {
                                     <span className="text-xs font-semibold">{user.displayName}</span>
                                     <span className="text-[10px] text-muted-foreground uppercase">{role}</span>
                                 </div>
-                                {user.photoURL ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={user.photoURL} alt="Profile" className="h-9 w-9 rounded-full border border-zinc-200 dark:border-zinc-800" />
-                                ) : (
-                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-                                        <User className="h-4 w-4" />
-                                    </div>
-                                )}
+                                <Link href="/settings" className="transition-transform hover:scale-105 active:scale-95" title="Profile Settings">
+                                    {user.photoURL ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={user.photoURL} alt="Profile" className="h-9 w-9 rounded-full border border-zinc-200 dark:border-zinc-800" />
+                                    ) : (
+                                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors">
+                                            <User className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+                                        </div>
+                                    )}
+                                </Link>
 
                                 <button
                                     onClick={logout}
