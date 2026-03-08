@@ -13,7 +13,8 @@ export function Hero() {
                 <div className="animate-fade-in-up flex flex-col items-center gap-6">
                     <div className="inline-flex items-center rounded-full border border-black/5 bg-black/5 px-3 py-1 text-sm font-medium text-foreground backdrop-blur-xl dark:border-white/10 dark:bg-white/10">
                         <span className="flex h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                        v2.0 is now live
+                        {/* v2.0 is now live */}
+                        Log-in to access resources
                     </div>
 
                     <h1 className="max-w-4xl text-5xl font-bold tracking-tight sm:text-7xl">
