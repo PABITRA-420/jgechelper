@@ -1,4 +1,4 @@
-import { FileText, Download, Eye, Loader2, EyeOff } from "lucide-react";
+import { FileText, Download, Eye, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 interface ResourceProps {
@@ -94,45 +94,23 @@ export function ResourceCard({ resource }: { resource: ResourceProps }) {
             </div>
 
             <div className="mt-6 flex items-center gap-3">
-                {resource.downloadURL ? (
-                    <button
-                        onClick={handleDownload}
-                        disabled={downloading}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-foreground py-2 text-sm font-medium text-background transition-transform active:scale-95 disabled:opacity-70 disabled:active:scale-100"
-                    >
-                        {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                        {downloading ? "Downloading..." : "Download"}
-                    </button>
-                ) : (
-                    <button
-                        onClick={() => alert("No file attached to this resource.")}
-                        title="No File"
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-foreground/50 py-2 text-sm font-medium text-background opacity-70 transition-transform active:scale-95 cursor-pointer"
-                    >
-                        <Download className="h-4 w-4" />
-                        No File
-                    </button>
-                )}
-
-                {resource.downloadURL ? (
-                    <a
-                        href={resource.downloadURL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center rounded-lg border border-input bg-background/50 p-2 text-foreground transition-colors hover:bg-secondary"
-                        title="View Resource"
-                    >
-                        <Eye className="h-4 w-4" />
-                    </a>
-                ) : (
-                    <button
-                        onClick={() => alert("No file attached to this resource.")}
-                        className="flex items-center justify-center rounded-lg border border-input bg-background/50 p-2 text-muted-foreground opacity-70 transition-colors hover:bg-secondary cursor-pointer"
-                        title="No File"
-                    >
-                        <EyeOff className="h-4 w-4" />
-                    </button>
-                )}
+                <button
+                    onClick={handleDownload}
+                    disabled={downloading || !resource.downloadURL}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-foreground py-2 text-sm font-medium text-background transition-transform active:scale-95 disabled:opacity-70 disabled:active:scale-100"
+                >
+                    {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                    {downloading ? "Downloading..." : "Download"}
+                </button>
+                <a
+                    href={resource.downloadURL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center rounded-lg border border-input bg-background/50 p-2 text-foreground transition-colors hover:bg-secondary"
+                    title="View Resource"
+                >
+                    <Eye className="h-4 w-4" />
+                </a>
             </div>
         </div>
     );
