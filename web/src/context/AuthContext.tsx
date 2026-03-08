@@ -10,7 +10,8 @@ import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     updateProfile,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    sendEmailVerification
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -146,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             localStorage.setItem("tempDisplayName", name);
             const result = await createUserWithEmailAndPassword(auth, email, pass);
             await updateProfile(result.user, { displayName: name });
+            await sendEmailVerification(result.user);
             // Remove the manual setDoc here to avoid the race condition completely
         } catch (error) {
             console.error("Error registering", error);
