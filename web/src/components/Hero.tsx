@@ -11,9 +11,14 @@ export function Hero() {
 
             <div className="container relative z-10 px-4 md:px-6">
                 <div className="animate-fade-in-up flex flex-col items-center gap-6">
-                    <div className="inline-flex items-center rounded-full border border-black/5 bg-black/5 px-3 py-1 text-sm font-medium text-foreground backdrop-blur-xl dark:border-white/10 dark:bg-white/10">
-                        <span className="flex h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                        v2.0 is now live
+                    <div className="group relative inline-flex items-center justify-center overflow-hidden rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-sm font-bold shadow-[0_0_15px_rgba(59,130,246,0.3)] backdrop-blur-xl transition-all hover:bg-blue-500/20 hover:shadow-[0_0_25px_rgba(59,130,246,0.5)] dark:border-blue-400/30 dark:bg-blue-400/10">
+                        <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(100%)]">
+                            <div className="relative h-full w-8 bg-white/20"></div>
+                        </div>
+                        <span className="mr-2 flex h-2 w-2 animate-pulse rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
+                        <span className="relative z-10 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm dark:from-blue-400 dark:to-purple-400">
+                            Log-in to access resources
+                        </span>
                     </div>
 
                     <h1 className="max-w-4xl text-5xl font-bold tracking-tight sm:text-7xl">
