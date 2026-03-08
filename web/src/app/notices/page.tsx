@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { NoticeCard } from "@/components/NoticeCard";
 import { collection, query, orderBy, getDocs, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { BellOff } from "lucide-react";
 
 interface Notice {
     id: number; // Keeping number to match interface, but real DB uses string. Handled in map.
@@ -82,8 +83,12 @@ export default function NoticesPage() {
                             <NoticeCard key={notice.id} notice={notice} />
                         ))
                     ) : (
-                        <div className="rounded-xl border border-dashed border-zinc-200 p-10 text-center dark:border-zinc-800">
-                            <p className="text-muted-foreground">No notices published yet.</p>
+                        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 py-16 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
+                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
+                                <BellOff className="h-8 w-8 text-zinc-400 dark:text-zinc-600" />
+                            </div>
+                            <h3 className="text-lg font-medium text-foreground">No notices yet</h3>
+                            <p className="mt-1 max-w-sm text-sm text-muted-foreground">We haven't published any official announcements yet. Check back later!</p>
                         </div>
                     )}
                 </div>

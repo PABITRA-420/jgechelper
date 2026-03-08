@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, LogOut, LayoutDashboard, User } from "lucide-react";
+import { useState } from "react";
+import { Menu, LogOut, LayoutDashboard, User, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
     const { user, role, logout } = useAuth();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center p-4">
@@ -31,20 +33,10 @@ export function Navbar() {
                 {/* Actions */}
                 <div className="flex items-center gap-4">
                     {user ? (
-                        <>
-                            {role === 'admin' && (
-                                <Link
-                                    href="/admin"
-                                    className="hidden items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-500 md:flex"
-                                    title="Admin Dashboard"
-                                >
-                                    <LayoutDashboard className="h-5 w-5" />
-                                    Dashboard
-                                </Link>
-                            )}
-
-                            <div className="flex items-center gap-3">
-                                <div className="hidden flex-col items-end md:flex">
+                        <div className="flex items-center gap-4">
+                            {/* Desktop Profile Dropdown */}
+                            <div className="hidden md:flex items-center gap-3 relative group py-2">
+                                <div className="flex flex-col items-end">
                                     <span className="text-xs font-semibold">{user.displayName}</span>
                                     <span className="text-[10px] text-muted-foreground uppercase">{role}</span>
                                 </div>
@@ -66,13 +58,39 @@ export function Navbar() {
                                 >
                                     <LogOut className="h-5 w-5" />
                                 </button>
+
+                                {/* Dropdown Menu */}
+                                <div className="absolute right-0 top-full hidden w-56 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-background shadow-xl group-hover:flex dark:border-zinc-800 animate-in fade-in slide-in-from-top-2">
+                                    <div className="p-3 border-b border-zinc-200 dark:border-zinc-800">
+                                        <p className="text-sm font-medium truncate">{user.displayName}</p>
+                                        <p className="text-xs text-muted-foreground truncate">{user.email || ""}</p>
+                                    </div>
+                                    <div className="p-1">
+                                        <Link href="/settings" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-foreground hover:bg-secondary">
+                                            <User className="h-4 w-4" />
+                                            Profile Settings
+                                        </Link>
+                                        {role === 'admin' && (
+                                            <Link href="/admin" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-blue-600 hover:bg-blue-500/10">
+                                                <LayoutDashboard className="h-4 w-4" />
+                                                Admin Dashboard
+                                            </Link>
+                                        )}
+                                    </div>
+                                    <div className="p-1 border-t border-zinc-200 dark:border-zinc-800">
+                                        <button onClick={logout} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-red-500 hover:bg-red-500/10">
+                                            <LogOut className="h-4 w-4" />
+                                            Sign Out
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                        </>
+                        </div>
                     ) : (
-                        <>
+                        <div className="hidden md:flex items-center gap-4">
                             <Link
                                 href="/login"
-                                className="hidden rounded-full px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary md:block"
+                                className="rounded-full px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
                             >
                                 Sign In
                             </Link>
@@ -82,15 +100,66 @@ export function Navbar() {
                             >
                                 Get Started
                             </Link>
-                        </>
+                        </div>
                     )}
 
                     {/* Mobile Menu Toggle */}
-                    <button className="md:hidden">
-                        <Menu className="h-6 w-6 text-foreground" />
+                    <button
+                        className="md:hidden"
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    >
+                        {isMobileMenuOpen ? <X className="h-6 w-6 text-foreground" /> : <Menu className="h-6 w-6 text-foreground" />}
                     </button>
                 </div>
             </nav>
+
+            {/* Mobile Menu Overlay */}
+            {isMobileMenuOpen && (
+                <div className="absolute top-[88px] left-4 right-4 z-40 flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-background/95 p-6 shadow-xl backdrop-blur-xl dark:border-zinc-800 md:hidden animate-in slide-in-from-top-4 fade-in duration-200">
+                    <Link href="/resources" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-foreground">
+                        Resources
+                    </Link>
+                    <Link href="/notices" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-foreground">
+                        Notices
+                    </Link>
+                    <Link href="/about" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-foreground">
+                        About
+                    </Link>
+
+                    <hr className="my-2 border-zinc-200 dark:border-zinc-800" />
+
+                    {!user && (
+                        <div className="flex flex-col gap-3">
+                            <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center rounded-xl border border-input py-3 font-medium text-foreground hover:bg-secondary">
+                                Sign In
+                            </Link>
+                            <Link href="/register" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center rounded-xl bg-foreground py-3 font-medium text-background">
+                                Get Started
+                            </Link>
+                        </div>
+                    )}
+
+                    {user && role === 'admin' && (
+                        <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2 text-lg font-medium text-blue-600">
+                            <LayoutDashboard className="h-5 w-5" />
+                            Admin Dashboard
+                        </Link>
+                    )}
+
+                    {user && (
+                        <button
+                            onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                logout();
+                            }}
+                            className="flex items-center gap-2 text-lg font-medium text-red-500 w-full text-left"
+                        >
+                            <LogOut className="h-5 w-5" />
+                            Sign Out
+                        </button>
+                    )}
+                </div>
+            )}
         </header>
     );
 }
