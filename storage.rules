@@ -1,0 +1,23 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isAdmin() {
+      return request.auth != null && 
+             request.auth.token.email == "sarkarpabitra1510@gmail.com" &&
+             request.auth.token.email_verified == true;
+    }
+
+    // Public resources (require auth + verification)
+    match /resources/{allPaths=**} {
+      allow read: if request.auth != null && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == "google.com");
+      allow write: if isAdmin();
+    }
+
+    // User profile images etc.
+    match /users/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
