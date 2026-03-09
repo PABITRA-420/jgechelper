@@ -15,9 +15,16 @@ export default function RegisterPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Redirect if logged in
+    const [verificationSent, setVerificationSent] = useState(false);
+
+    // Redirect if logged in (and verified if email auth)
     useEffect(() => {
         if (user && role) {
+            // If they just registered with email and haven't verified, don't redirect yet
+            if (user.providerData.some(p => p.providerId === 'password') && !user.emailVerified) {
+                return;
+            }
+
             if (role === 'admin') {
                 router.push('/admin');
             } else {
@@ -68,6 +75,7 @@ export default function RegisterPage() {
 
         try {
             await registerWithEmail(name, email, password);
+            setVerificationSent(true);
         } catch (err: any) {
             console.error(err);
             setError(err?.message || "Registration failed. Try again.");
@@ -92,61 +100,84 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="mb-8 text-center">
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Create Account</h1>
-                    <p className="text-sm text-muted-foreground">Join the exclusive academic circle</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                        {verificationSent ? "Check your email" : "Create Account"}
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                        {verificationSent ? "We've sent a verification link to your email address." : "Join the exclusive academic circle"}
+                    </p>
                 </div>
 
-                <form className="space-y-4" onSubmit={handleEmailRegister}>
-                    <div>
-                        <label htmlFor="name" className="mb-2 block text-sm font-medium text-foreground">
-                            Full Name
-                        </label>
-                        <input
-                            type="text"
-                            id="name"
-                            placeholder="John Doe"
-                            className="w-full rounded-lg border border-input bg-background/50 px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                        />
+                {verificationSent ? (
+                    <div className="text-center">
+                        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20 text-green-500">
+                            <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
+                            </svg>
+                        </div>
+                        <p className="mb-6 text-sm text-foreground">
+                            Please click the link in the email to verify your account so you can log in. You may need to check your spam folder.
+                        </p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="w-full rounded-lg bg-foreground py-2.5 text-center text-sm font-medium text-background transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                        >
+                            I have verified my email
+                        </button>
                     </div>
-                    <div>
-                        <label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">
-                            Email
-                        </label>
-                        <input
-                            type="email"
-                            id="email"
-                            placeholder="name@example.com"
-                            className="w-full rounded-lg border border-input bg-background/50 px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="password" className="mb-2 block text-sm font-medium text-foreground">
-                            Password
-                        </label>
-                        <input
-                            type="password"
-                            id="password"
-                            placeholder="••••••••"
-                            className="w-full rounded-lg border border-input bg-background/50 px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                    </div>
+                ) : (
+                    <form className="space-y-4" onSubmit={handleEmailRegister}>
+                        <div>
+                            <label htmlFor="name" className="mb-2 block text-sm font-medium text-foreground">
+                                Full Name
+                            </label>
+                            <input
+                                type="text"
+                                id="name"
+                                placeholder="John Doe"
+                                className="w-full rounded-lg border border-input bg-background/50 px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                id="email"
+                                placeholder="name@example.com"
+                                className="w-full rounded-lg border border-input bg-background/50 px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="password" className="mb-2 block text-sm font-medium text-foreground">
+                                Password
+                            </label>
+                            <input
+                                type="password"
+                                id="password"
+                                placeholder="••••••••"
+                                className="w-full rounded-lg border border-input bg-background/50 px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </div>
 
-                    {error && <p className="text-sm text-red-500">{error}</p>}
+                        {error && <p className="text-sm text-red-500">{error}</p>}
 
-                    <button
-                        type="submit"
-                        className="w-full rounded-lg bg-foreground py-2.5 text-center text-sm font-medium text-background transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
-                        disabled={loading}
-                    >
-                        {loading ? "Creating Account..." : "Create Account"}
-                    </button>
-                </form>
+                        <button
+                            type="submit"
+                            className="w-full rounded-lg bg-foreground py-2.5 text-center text-sm font-medium text-background transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                            disabled={loading}
+                        >
+                            {loading ? "Creating Account..." : "Create Account"}
+                        </button>
+                    </form>
+                )}
 
                 <div className="my-6 flex items-center">
                     <div className="h-px flex-1 bg-border/50"></div>
@@ -186,6 +217,6 @@ export default function RegisterPage() {
                     </Link>
                 </p>
             </div>
-        </main>
+        </main >
     );
 }

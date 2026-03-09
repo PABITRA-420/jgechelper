@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-    const { signInWithGoogle, signInWithEmail, resetPassword, user, role } = useAuth();
+    const { signInWithGoogle, signInWithEmail, resetPassword, user, role, logout } = useAuth();
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -17,16 +17,24 @@ export default function LoginPage() {
     const [error, setError] = useState<string | null>(null);
     const [resetSuccess, setResetSuccess] = useState(false);
 
-    // Redirect if logged in
+    // Redirect if logged in (and verified if email auth)
     useEffect(() => {
-        if (user && role) {
-            if (role === 'admin') {
-                router.push('/admin');
-            } else {
-                router.push('/resources');
+        if (user) {
+            if (user.providerData.some(p => p.providerId === 'password') && !user.emailVerified) {
+                setError("Please verify your email before logging in. Check your inbox.");
+                if (logout) logout();
+                return;
+            }
+
+            if (role) {
+                if (role === 'admin') {
+                    router.push('/admin');
+                } else {
+                    router.push('/resources');
+                }
             }
         }
-    }, [user, role, router]);
+    }, [user, role, router, logout]);
 
     const handleGoogleLogin = async () => {
         setError(null);

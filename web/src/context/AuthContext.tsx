@@ -10,7 +10,9 @@ import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     updateProfile,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    sendEmailVerification,
+    ActionCodeSettings
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -140,12 +142,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }
 
+    // Dynamic URL for action code settings based on environment
+    const getActionCodeSettings = (): ActionCodeSettings => {
+        // In Nuxt/Next.js you can rely on checking window.location or process.env
+        const url = typeof window !== "undefined"
+            ? `${window.location.origin}/auth/action`
+            : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000/auth/action";
+
+        return {
+            url,
+            handleCodeInApp: true,
+        };
+    };
+
     const registerWithEmail = async (name: string, email: string, pass: string) => {
         try {
             // Save the name temporarily in localStorage before creating the user
             localStorage.setItem("tempDisplayName", name);
             const result = await createUserWithEmailAndPassword(auth, email, pass);
             await updateProfile(result.user, { displayName: name });
+            await sendEmailVerification(result.user, getActionCodeSettings());
             // Remove the manual setDoc here to avoid the race condition completely
         } catch (error) {
             console.error("Error registering", error);
@@ -156,7 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const resetPassword = async (email: string) => {
         try {
-            await sendPasswordResetEmail(auth, email);
+            await sendPasswordResetEmail(auth, email, getActionCodeSettings());
         } catch (error) {
             console.error("Error resetting password", error);
             throw error;
