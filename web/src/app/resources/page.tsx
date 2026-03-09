@@ -6,6 +6,8 @@ import { ResourceCard } from "@/components/ResourceCard";
 import { Search, ChevronRight, ArrowLeft, BookOpen, GraduationCap } from "lucide-react";
 import { collection, query, orderBy, getDocs, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 // Define Resource Interface matching the new structure
 interface Resource {
@@ -42,16 +44,26 @@ export default function ResourcesPage() {
     const [selectedSemester, setSelectedSemester] = useState<string | null>(null);
     const [selectedType, setSelectedType] = useState<string>("All");
 
+    const { user, role, loading: authLoading } = useAuth();
+    const router = useRouter();
+
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
 
+    // Protect Route: Redirect if not verified
+    useEffect(() => {
+        if (!authLoading && (!user || !role)) {
+            router.push("/login");
+        }
+    }, [user, role, authLoading, router]);
+
     // Fetch resources only when we reach the list view
     useEffect(() => {
-        if (view === "resources" && selectedBranch && selectedSemester) {
+        if (view === "resources" && selectedBranch && selectedSemester && role) {
             fetchResources();
         }
-    }, [view, selectedBranch, selectedSemester]);
+    }, [view, selectedBranch, selectedSemester, role]);
 
     async function fetchResources() {
         setLoading(true);

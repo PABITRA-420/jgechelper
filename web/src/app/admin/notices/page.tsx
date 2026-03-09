@@ -64,6 +64,9 @@ function NoticeForm({ editingNotice, onClearEdit }: { editingNotice: any, onClea
                 const uploadResponse = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
                     method: "POST",
                     body: file,
+                    headers: {
+                        'x-upload-secret': process.env.NEXT_PUBLIC_UPLOAD_SECRET || '',
+                    },
                 });
 
                 if (!uploadResponse.ok) {

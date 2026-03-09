@@ -9,7 +9,7 @@ export default function SettingsPage() {
     const { user, role } = useAuth();
     const [activeTab, setActiveTab] = useState("profile");
 
-    if (!user) {
+    if (!user || !role) {
         return (
             <main className="min-h-screen bg-background pb-20">
                 <Navbar />
