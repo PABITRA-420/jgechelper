@@ -32,7 +32,7 @@ export function Navbar() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-4">
-                    {user ? (
+                    {user && role ? (
                         <div className="flex items-center gap-4">
                             {/* Desktop Profile Dropdown */}
                             <div className="hidden md:flex items-center gap-3 relative group py-2">
@@ -128,7 +128,7 @@ export function Navbar() {
 
                     <hr className="my-2 border-zinc-200 dark:border-zinc-800" />
 
-                    {!user && (
+                    {(!user || !role) && (
                         <div className="flex flex-col gap-3">
                             <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center rounded-xl border border-input py-3 font-medium text-foreground hover:bg-secondary">
                                 Sign In
@@ -146,7 +146,7 @@ export function Navbar() {
                         </Link>
                     )}
 
-                    {user && (
+                    {user && role && (
                         <button
                             onClick={() => {
                                 setIsMobileMenuOpen(false);

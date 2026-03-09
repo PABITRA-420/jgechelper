@@ -49,7 +49,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setLoading(true);
 
             if (currentUser) {
+                // Determine if the user is truly "verified" (Google users are auto-verified)
+                const isEmailUser = currentUser.providerData.some(p => p.providerId === 'password');
+                const isVerified = isEmailUser ? currentUser.emailVerified : true;
+
                 setUser(currentUser);
+
+                // If not verified, we don't fetch role to prevent access to role-protected features
+                if (isEmailUser && !isVerified) {
+                    setRole(null);
+                    setLoading(false);
+                    return;
+                }
 
                 try {
                     const userRef = doc(db, "users", currentUser.uid);
@@ -162,6 +173,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const result = await createUserWithEmailAndPassword(auth, email, pass);
             await updateProfile(result.user, { displayName: name });
             await sendEmailVerification(result.user, getActionCodeSettings());
+            // Immediately sign out to prevent session hijacking before verification
+            await signOut(auth);
             // Remove the manual setDoc here to avoid the race condition completely
         } catch (error) {
             console.error("Error registering", error);

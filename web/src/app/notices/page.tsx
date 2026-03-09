@@ -6,6 +6,8 @@ import { NoticeCard } from "@/components/NoticeCard";
 import { collection, query, orderBy, getDocs, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { BellOff } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 interface Notice {
     id: number; // Keeping number to match interface, but real DB uses string. Handled in map.
@@ -20,8 +22,17 @@ interface Notice {
 }
 
 export default function NoticesPage() {
+    const { user, role, loading: authLoading } = useAuth();
+    const router = useRouter();
     const [notices, setNotices] = useState<Notice[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Protect Route
+    useEffect(() => {
+        if (!authLoading && (!user || !role)) {
+            router.push("/login");
+        }
+    }, [user, role, authLoading, router]);
 
     useEffect(() => {
         async function fetchNotices() {
