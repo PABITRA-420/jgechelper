@@ -1,4 +1,5 @@
 import { Calendar, AlertCircle, Paperclip, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface NoticeProps {
     id: number | string;
@@ -13,7 +14,9 @@ interface NoticeProps {
 
 export function NoticeCard({ notice }: { notice: NoticeProps }) {
     const isUrgent = notice.category === "Urgent";
-    const isNew = (() => {
+    const [isNew, setIsNew] = useState(false);
+
+    useEffect(() => {
         const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
         let diff = -1;
         if (notice.createdAt && notice.createdAt > 0) {
@@ -24,8 +27,8 @@ export function NoticeCard({ notice }: { notice: NoticeProps }) {
                 diff = Date.now() - parsed;
             }
         }
-        return diff >= -86400000 && diff < sevenDaysMs;
-    })();
+        setIsNew(diff >= -86400000 && diff < sevenDaysMs);
+    }, [notice]);
 
     return (
         <div className={`glass relative overflow-hidden rounded-xl border p-6 transition-all hover:bg-secondary/50 ${isUrgent ? "border-red-500/50 bg-red-500/5" : "border-border"}`}>
