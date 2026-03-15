@@ -134,7 +134,7 @@ export default function RegisterPage() {
                             <input
                                 type="text"
                                 id="name"
-                                placeholder="John Doe"
+                                placeholder="Enter Your Name"
                                 className="w-full rounded-lg border border-input bg-background/50 px-4 py-2 text-foreground placeholder:text-muted-foreground focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}

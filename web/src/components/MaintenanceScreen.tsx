@@ -13,7 +13,11 @@ export default function MaintenanceScreen({ contactEmail = "admin@jgec.ac.in", e
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsClient(true);
+    }, []);
+
+    useEffect(() => {
         if (!estimatedEndTime) return;
 
         const calculateTimeLeft = () => {
