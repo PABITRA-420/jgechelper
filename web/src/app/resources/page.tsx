@@ -104,22 +104,64 @@ export default function ResourcesPage() {
         };
     }, [view, selectedBranch, selectedSemester, role]);
 
-    const handleBack = () => {
-        if (view === "resources") setView("semesters");
-        else if (view === "semesters") {
-            setSelectedBranch(null);
-            setView("branches");
+    useEffect(() => {
+        // Read initial state from URL if present
+        const params = new URLSearchParams(window.location.search);
+        const urlView = params.get("view");
+        if (urlView) {
+            setView(urlView as any);
+            const urlBranch = params.get("branch");
+            const urlSemester = params.get("semester");
+            if (urlBranch) setSelectedBranch(urlBranch);
+            if (urlSemester) setSelectedSemester(urlSemester);
+            
+            // Replace dummy state
+            window.history.replaceState(
+                { view: urlView, branch: urlBranch, semester: urlSemester },
+                "",
+                window.location.search
+            );
         }
+
+        const handlePopState = (event: PopStateEvent) => {
+            const state = event.state as { view?: string, branch?: string, semester?: string } | null;
+            if (state && state.view) {
+                setView(state.view as any);
+                if (state.branch) setSelectedBranch(state.branch);
+                if (state.semester) setSelectedSemester(state.semester);
+            } else {
+                setView("branches");
+                setSelectedBranch(null);
+                setSelectedSemester(null);
+            }
+        };
+
+        window.addEventListener("popstate", handlePopState);
+        return () => window.removeEventListener("popstate", handlePopState);
+    }, []);
+
+    const handleBack = () => {
+        window.history.back();
     };
 
     const handleBranchSelect = (branchId: string) => {
         setSelectedBranch(branchId);
         setView("semesters");
+        window.history.pushState(
+            { view: "semesters", branch: branchId },
+            "",
+            window.location.pathname + "?view=semesters&branch=" + branchId
+        );
     };
 
     const handleSemesterSelect = (semester: string) => {
         setSelectedSemester(semester);
         setView("resources");
+        window.history.pushState(
+            { view: "resources", branch: selectedBranch, semester: semester },
+            "",
+            window.location.pathname + `?view=resources&branch=${selectedBranch}&semester=${semester}`
+        );
     };
 
     return (
@@ -159,7 +201,15 @@ export default function ResourcesPage() {
 
             <div className="container mt-8 max-w-5xl px-4 md:px-6">
 
-                {/* STEP 1: BRANCH SELECTION */}
+                {authLoading ? (
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-pulse">
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <div key={i} className="glass h-[180px] rounded-2xl bg-zinc-200/50 dark:bg-zinc-800/50"></div>
+                        ))}
+                    </div>
+                ) : (
+                    <>
+                        {/* STEP 1: BRANCH SELECTION */}
                 {view === "branches" && (
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {BRANCHES.map((branch) => (
@@ -261,6 +311,8 @@ export default function ResourcesPage() {
                             </div>
                         )}
                     </div>
+                )}
+                    </>
                 )}
             </div>
         </main>

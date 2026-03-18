@@ -1,5 +1,5 @@
 import { Navbar } from "@/components/Navbar";
-import { Shield, BookOpen, User, Info, Scale, Lock } from "lucide-react";
+import { Shield, BookOpen, User, Info, Scale, Lock, Mail } from "lucide-react";
 
 export default function AboutPage() {
     return (
@@ -118,6 +118,39 @@ export default function AboutPage() {
                         </li>
                     </ul>
                 </section>
+
+                <hr className="border-zinc-200 dark:border-zinc-800" />
+
+                {/* Contact & Feedback */}
+                <section className="pb-12">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="rounded-lg bg-indigo-500/10 p-2 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
+                            <Mail className="h-6 w-6" />
+                        </div>
+                        <h2 className="text-2xl font-bold tracking-tight">Contact & Feedback</h2>
+                    </div>
+                    <p className="text-muted-foreground mb-6 leading-relaxed">
+                        Have suggestions, found a bug, or just want to say hi? We'd love to hear from you. Your feedback helps make JGEC Helper better for everyone.
+                    </p>
+                    <a 
+                        href="mailto:admin.jgechelper@gmail.com?subject=Feedback&body=Dear%20Admin%2C%0A%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E  this demo gmail,"
+                        className="inline-flex items-center justify-center rounded-xl bg-foreground px-6 py-3 text-sm font-medium text-background transition-transform hover:scale-105 active:scale-95 gap-2"
+                    >
+                        <Mail className="h-4 w-4" />
+                        Email Admin
+                    </a>
+                </section>
+
+                {/* Footer / Tribute */}
+                <footer className="mt-16 pb-8 text-center text-sm text-muted-foreground animate-fade-in-up">
+                    <p className="flex items-center justify-center gap-1.5">
+                        Made with <span className="text-red-500 text-lg leading-none">♥</span> by 
+                        <span className="font-semibold text-foreground">Sarkar Technology</span>
+                    </p>
+                    <p className="mt-2 text-xs">
+                        &copy; {new Date().getFullYear()} JGEC Helper. All rights reserved.
+                    </p>
+                </footer>
 
             </div>
         </main>
