@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Users, Download, AlertCircle, Bell } from "lucide-react";
+import { FileText, Users, AlertCircle, Bell } from "lucide-react";
 import { useEffect, useState } from "react";
 import { collection, getCountFromServer, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -11,7 +11,7 @@ export default function AdminPage() {
         resources: "...",
         notices: "...",
     });
-    const [recentActivity, setRecentActivity] = useState<any[]>([]);
+    const [recentActivity, setRecentActivity] = useState<{ id: string, type: string, title: string, date: Date }[]>([]);
     const [loadingActivity, setLoadingActivity] = useState(true);
 
     useEffect(() => {

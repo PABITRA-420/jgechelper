@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { ResourceCard } from "@/components/ResourceCard";
-import { Search, ChevronRight, ArrowLeft, BookOpen, GraduationCap } from "lucide-react";
-import { collection, query, orderBy, getDocs, where } from "firebase/firestore";
+import { Search, ChevronRight, ArrowLeft, BookOpen } from "lucide-react";
+import { collection, query, orderBy, onSnapshot, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -16,10 +16,11 @@ interface Resource {
     subject: string;
     semester: string;
     type: "Question Paper" | "Notes" | "Routine" | "Others";
-    branch: string;
+    branch?: string;
+    branches?: string[];
     date: string;
     downloadURL?: string;
-    createdAt: any;
+    createdAt: { toDate: () => Date; toMillis: () => number };
     visible?: boolean;
     orderSequence?: number;
 }
@@ -58,53 +59,50 @@ export default function ResourcesPage() {
         }
     }, [user, role, authLoading, router]);
 
-    // Fetch resources only when we reach the list view
     useEffect(() => {
+        let unsubscribe: () => void;
+
         if (view === "resources" && selectedBranch && selectedSemester && role) {
-            fetchResources();
-        }
-    }, [view, selectedBranch, selectedSemester, role]);
-
-    async function fetchResources() {
-        setLoading(true);
-        try {
+            setLoading(true);
             const resourcesRef = collection(db, "resources");
-            // Basic query, optimize indexes later if needed
-            // We can filter client-side for now since dataset is small, or use compound queries
-            const q = query(
-                resourcesRef,
-                where("branch", "==", selectedBranch),
-                where("semester", "==", selectedSemester),
-                // where("visible", "!=", false), // Firestore requires index for complex inequality queries.
-                // It's safer to filter client-side for this specific use case unless data is massive.
-                orderBy("createdAt", "desc")
-            );
+            const q = query(resourcesRef);
 
-            const snapshot = await getDocs(q);
+            unsubscribe = onSnapshot(q, (snapshot) => {
+                const fetchedResources = (snapshot.docs
+                    .map(doc => ({
+                        id: doc.id,
+                        ...doc.data(),
+                        date: doc.data().createdAt?.toDate().toLocaleDateString() || "Unknown Date"
+                    })) as Resource[])
+                    .filter(res => res.semester === selectedSemester)
+                    .filter(res => {
+                        if (res.branches && Array.isArray(res.branches)) {
+                            return res.branches.includes(selectedBranch!);
+                        }
+                        return res.branch === selectedBranch;
+                    })
+                    .filter((res) => res.visible !== false) // Default true
+                    .sort((a, b) => {
+                        const orderA = a.orderSequence ?? Number.MAX_SAFE_INTEGER;
+                        const orderB = b.orderSequence ?? Number.MAX_SAFE_INTEGER;
+                        if (orderA !== orderB) return orderA - orderB;
+                        const timeA = a.createdAt?.toMillis() || 0;
+                        const timeB = b.createdAt?.toMillis() || 0;
+                        return timeB - timeA;
+                    });
 
-            const fetchedResources = (snapshot.docs
-                .map(doc => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    date: doc.data().createdAt?.toDate().toLocaleDateString() || "Unknown Date"
-                })) as Resource[])
-                .filter((res) => res.visible !== false) // Default true
-                .sort((a, b) => {
-                    const orderA = a.orderSequence ?? Number.MAX_SAFE_INTEGER;
-                    const orderB = b.orderSequence ?? Number.MAX_SAFE_INTEGER;
-                    if (orderA !== orderB) return orderA - orderB;
-                    const timeA = a.createdAt?.toMillis() || 0;
-                    const timeB = b.createdAt?.toMillis() || 0;
-                    return timeB - timeA;
-                });
-
-            setResources(fetchedResources);
-        } catch (error) {
-            console.error("Error fetching resources:", error);
-        } finally {
-            setLoading(false);
+                setResources(fetchedResources);
+                setLoading(false);
+            }, (error) => {
+                console.error("Error fetching resources:", error);
+                setLoading(false);
+            });
         }
-    }
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    }, [view, selectedBranch, selectedSemester, role]);
 
     const handleBack = () => {
         if (view === "resources") setView("semesters");

@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         const isAdmin = currentUser.email && ADMIN_EMAILS.includes(currentUser.email);
                         const initialRole: UserRole = isAdmin ? "admin" : "user";
 
-                        const newUserData: any = {
+                        const newUserData: Record<string, unknown> = {
                             uid: currentUser.uid,
                             email: currentUser.email,
                             role: initialRole,
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [router]);
 
     const signInWithGoogle = async () => {
         const provider = new GoogleAuthProvider();

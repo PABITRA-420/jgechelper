@@ -6,7 +6,8 @@ interface ResourceProps {
     subject: string;
     semester: string;
     type: "Question Paper" | "Notes" | "Routine" | "Others";
-    branch: string;
+    branch?: string;
+    branches?: string[];
     date: string;
     downloadURL?: string;
 }
@@ -83,7 +84,7 @@ export function ResourceCard({ resource }: { resource: ResourceProps }) {
 
             <div className="mt-4">
                 <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                    <span>{resource.branch}</span>
+                    <span>{resource.branches ? resource.branches.join(', ') : resource.branch}</span>
                     <span>•</span>
                     <span>{resource.type}</span>
                 </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { NoticeCard } from "@/components/NoticeCard";
-import { collection, query, orderBy, getDocs, where } from "firebase/firestore";
+import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { BellOff } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -49,14 +49,17 @@ export default function NoticesPage() {
 
                 const fetchedNotices = snapshot.docs
                     .map(doc => ({ ...doc.data(), id: doc.id }))
-                    .filter((n: any) => n.visible !== false) // Default true if undefined
-                    .map((data: any) => ({
-                        id: data.id,
-                        ...data,
-                        date: data.createdAt?.toDate().toLocaleDateString() || "Unknown Date",
-                        createdAt: data.createdAt?.toMillis() || 0,
-                        category: data.category || "General",
-                    })) as unknown as Notice[];
+                    .filter((n: Record<string, unknown>) => n.visible !== false) // Default true if undefined
+                    .map((data: Record<string, unknown>) => {
+                        const createdAt = data.createdAt as { toDate: () => Date, toMillis: () => number } | undefined;
+                        return {
+                            id: data.id,
+                            ...data,
+                            date: createdAt?.toDate().toLocaleDateString() || "Unknown Date",
+                            createdAt: createdAt?.toMillis() || 0,
+                            category: data.category || "General",
+                        }
+                    }) as unknown as Notice[];
 
                 setNotices(fetchedNotices);
             } catch (error) {
@@ -99,7 +102,7 @@ export default function NoticesPage() {
                                 <BellOff className="h-8 w-8 text-zinc-400 dark:text-zinc-600" />
                             </div>
                             <h3 className="text-lg font-medium text-foreground">No notices yet</h3>
-                            <p className="mt-1 max-w-sm text-sm text-muted-foreground">We haven't published any official announcements yet. Check back later!</p>
+                            <p className="mt-1 max-w-sm text-sm text-muted-foreground">We haven&apos;t published any official announcements yet. Check back later!</p>
                         </div>
                     )}
                 </div>

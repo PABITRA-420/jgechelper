@@ -96,9 +96,9 @@ export default function AdminFileUpload({
                     if (onUploadComplete) {
                         onUploadComplete(downloadURL, file.name);
                     }
-                } catch (err: any) {
+                } catch (err: unknown) {
                     setIsUploading(false);
-                    setError("Error getting download URL: " + err.message);
+                    setError("Error getting download URL: " + (err instanceof Error ? err.message : String(err)));
                 }
             }
         );

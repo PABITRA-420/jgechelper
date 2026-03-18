@@ -63,7 +63,7 @@ export default function MaintenanceScreen({ contactEmail = "admin@jgec.ac.in", e
                 </h1>
 
                 <p className="mb-10 text-lg text-zinc-300 sm:text-xl max-w-2xl mx-auto leading-relaxed">
-                    We are currently polishing the gears and upgrading <span className="font-semibold text-white">JGECHelper</span> to provide you with a smoother, faster experience. We'll be back online shortly.
+                    We are currently polishing the gears and upgrading <span className="font-semibold text-white">JGECHelper</span> to provide you with a smoother, faster experience. We&apos;ll be back online shortly.
                 </p>
 
                 {isClient && estimatedEndTime && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs, doc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Shield, ShieldAlert, User as UserIcon, Search, Trash2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -14,7 +14,7 @@ type CustomUser = {
     photoURL: string;
     role: "admin" | "user";
     status?: "active" | "banned";
-    createdAt: any;
+    createdAt: { seconds: number; nanoseconds: number } | null;
 };
 
 export default function AdminUsersPage() {
@@ -132,7 +132,7 @@ export default function AdminUsersPage() {
                         <span className="text-sm text-zinc-500 font-medium whitespace-nowrap">Sort by:</span>
                         <select
                             value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value as any)}
+                            onChange={(e) => setSortBy(e.target.value as "newest" | "oldest" | "name" | "status")}
                             className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600 w-full sm:w-auto"
                         >
                             <option value="newest">Newest First</option>

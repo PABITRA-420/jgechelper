@@ -2,21 +2,35 @@
 
 import { UploadForm } from "@/components/UploadForm";
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Eye, EyeOff, Trash2, FileText, Download, ExternalLink, Edit2, ArrowUp, ArrowDown } from "lucide-react";
+import { Eye, EyeOff, Trash2, FileText, ExternalLink, Edit2, ArrowUp, ArrowDown } from "lucide-react";
 
-function ResourceList({ onEdit }: { onEdit: (resource: any) => void }) {
-    const [resources, setResources] = useState<any[]>([]);
+type ResourceType = {
+    id: string;
+    title: string;
+    branch?: string;
+    branches?: string[];
+    semester?: string;
+    subject?: string;
+    type?: string;
+    downloadURL?: string;
+    visible?: boolean;
+    orderSequence?: number;
+    createdAt?: { toMillis: () => number };
+};
+
+function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) {
+    const [resources, setResources] = useState<ResourceType[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         // Fetch all and sort client-side by orderSequence (asc), then by createdAt (desc)
         const q = query(collection(db, "resources"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            let docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ResourceType));
 
-            docs.sort((a: any, b: any) => {
+            docs.sort((a: ResourceType, b: ResourceType) => {
                 const orderA = a.orderSequence ?? Number.MAX_SAFE_INTEGER;
                 const orderB = b.orderSequence ?? Number.MAX_SAFE_INTEGER;
                 if (orderA !== orderB) return orderA - orderB;
@@ -31,7 +45,7 @@ function ResourceList({ onEdit }: { onEdit: (resource: any) => void }) {
         return () => unsubscribe();
     }, []);
 
-    const toggleVisibility = async (id: string, currentStatus: boolean) => {
+    const toggleVisibility = async (id: string, currentStatus?: boolean) => {
         try {
             const isHidden = currentStatus === false;
             await updateDoc(doc(db, "resources", id), { visible: isHidden });
@@ -116,7 +130,7 @@ function ResourceList({ onEdit }: { onEdit: (resource: any) => void }) {
                         <div>
                             <p className="font-medium">{resource.title}</p>
                             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                                <span className="rounded bg-zinc-200 px-1.5 py-0.5 dark:bg-zinc-800">{resource.branch}</span>
+                                <span className="rounded bg-zinc-200 px-1.5 py-0.5 dark:bg-zinc-800">{resource.branches ? resource.branches.join(', ') : resource.branch}</span>
                                 <span className="rounded bg-zinc-200 px-1.5 py-0.5 dark:bg-zinc-800">{resource.semester}</span>
                                 <span>• {resource.subject}</span>
                                 <span>• {resource.type || "Unknown"}</span>
@@ -171,7 +185,7 @@ function ResourceList({ onEdit }: { onEdit: (resource: any) => void }) {
 }
 
 export default function AdminResourcesPage() {
-    const [editingResource, setEditingResource] = useState<any>(null);
+    const [editingResource, setEditingResource] = useState<ResourceType | null>(null);
 
     return (
         <div className="space-y-6">

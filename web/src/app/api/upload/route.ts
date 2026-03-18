@@ -23,7 +23,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     try {
         // Process the upload
-        const blob = await put(filename, request.body as any, {
+        const blob = await put(filename, request.body as ReadableStream, {
             access: 'public',
         });
 

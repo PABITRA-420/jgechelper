@@ -1,12 +1,23 @@
 "use client";
 
-import { UploadCloud, X, FileText, CheckCircle, AlertCircle } from "lucide-react";
-import { useState, useEffect } from "react";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { UploadCloud, X, FileText, CheckCircle, AlertCircle, ChevronDown, Check } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { collection, addDoc, serverTimestamp, doc, updateDoc } from "firebase/firestore";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 
-export function UploadForm({ editingResource, onClearEdit }: { editingResource?: any, onClearEdit?: () => void }) {
+export type UploadFormResource = {
+    id: string;
+    title?: string;
+    subject?: string;
+    branch?: string;
+    branches?: string[];
+    semester?: string;
+    type?: string;
+    downloadURL?: string;
+    fileName?: string;
+};
+
+export function UploadForm({ editingResource, onClearEdit }: { editingResource?: UploadFormResource | null, onClearEdit?: () => void }) {
     const [dragActive, setDragActive] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [existingAttachment, setExistingAttachment] = useState<{ url: string | null, name: string | null }>({ url: null, name: null });
@@ -17,20 +28,43 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
     // Form State
     const [title, setTitle] = useState("");
     const [subject, setSubject] = useState("");
-    const [branch, setBranch] = useState("CSE");
+    const [branches, setBranches] = useState<string[]>(["CSE"]);
     const [semester, setSemester] = useState("1st Semester");
     const [type, setType] = useState("Question Paper");
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const BRANCH_OPTIONS = ["CSE", "IT", "ECE", "ME", "EE", "CE"];
 
     useEffect(() => {
         if (editingResource) {
-            setTitle(editingResource.title || "");
-            setSubject(editingResource.subject || "");
-            setBranch(editingResource.branch || "CSE");
-            setSemester(editingResource.semester || "1st Semester");
-            setType(editingResource.type || "Question Paper");
+            setTitle((editingResource.title as string) || "");
+            setSubject((editingResource.subject as string) || "");
+            
+            // Handle legacy 'branch' field or new 'branches' array
+            let initialBranches = ["CSE"];
+            if (editingResource.branches && Array.isArray(editingResource.branches)) {
+                initialBranches = editingResource.branches as string[];
+            } else if (editingResource.branch) {
+                initialBranches = [editingResource.branch as string];
+            }
+            setBranches(initialBranches);
+
+            setSemester((editingResource.semester as string) || "1st Semester");
+            setType((editingResource.type as string) || "Question Paper");
             setExistingAttachment({
-                url: editingResource.downloadURL || null,
-                name: editingResource.fileName || null
+                url: (editingResource.downloadURL as string) || null,
+                name: (editingResource.fileName as string) || null
             });
             setFile(null);
             setSuccess(false);
@@ -43,7 +77,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
     const resetForm = () => {
         setTitle("");
         setSubject("");
-        setBranch("CSE");
+        setBranches(["CSE"]);
         setSemester("1st Semester");
         setType("Question Paper");
         setFile(null);
@@ -80,13 +114,21 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
         }
     };
 
+    const toggleBranch = (branchStr: string) => {
+        setBranches(prev => 
+            prev.includes(branchStr) 
+                ? prev.filter(b => b !== branchStr)
+                : [...prev, branchStr]
+        );
+    };
+
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
         setSuccess(false);
 
-        if ((!file && !existingAttachment.url) || !title || !subject) {
-            setError("Please fill in all fields and provide a file.");
+        if ((!file && !existingAttachment.url) || !title || !subject || branches.length === 0) {
+            setError("Please fill in all fields (select at least one branch) and provide a file.");
             return;
         }
 
@@ -118,10 +160,11 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
 
             if (editingResource) {
                 // Update Existing Resource
-                await updateDoc(doc(db, "resources", editingResource.id), {
+                await updateDoc(doc(db, "resources", editingResource.id as string), {
                     title,
                     subject,
-                    branch,
+                    branches,     // New array approach
+                    branch: branches[0] || "CSE", // Legacy fallback for safety
                     semester,
                     type,
                     downloadURL: currentDownloadURL,
@@ -135,7 +178,8 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                 await addDoc(collection(db, "resources"), {
                     title,
                     subject,
-                    branch,
+                    branches,     // New array approach
+                    branch: branches[0] || "CSE", // Legacy fallback for safety
                     semester,
                     type,
                     downloadURL: currentDownloadURL,
@@ -190,20 +234,48 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
-                    <div>
-                        <label className="mb-2 block text-sm font-medium">Branch</label>
-                        <select
-                            className="w-full rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                            value={branch}
-                            onChange={(e) => setBranch(e.target.value)}
+                    <div className="relative" ref={dropdownRef}>
+                        <label className="mb-2 block text-sm font-medium">Branches</label>
+                        <button
+                            type="button"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            className="w-full flex min-h-[42px] items-center justify-between rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         >
-                            <option className="bg-white text-black dark:bg-zinc-900 dark:text-white">CSE</option>
-                            <option className="bg-white text-black dark:bg-zinc-900 dark:text-white">IT</option>
-                            <option className="bg-white text-black dark:bg-zinc-900 dark:text-white">ECE</option>
-                            <option className="bg-white text-black dark:bg-zinc-900 dark:text-white">ME</option>
-                            <option className="bg-white text-black dark:bg-zinc-900 dark:text-white">EE</option>
-                            <option className="bg-white text-black dark:bg-zinc-900 dark:text-white">CE</option>
-                        </select>
+                            <div className="flex flex-wrap gap-1.5 pr-4">
+                                {branches.length === 0 ? (
+                                    <span className="text-muted-foreground py-0.5">Select branches...</span>
+                                ) : (
+                                    branches.map(b => (
+                                        <span key={b} className="flex items-center gap-1 rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                                            {b}
+                                            <X 
+                                                className="h-3 w-3 cursor-pointer hover:text-red-500 transition-colors" 
+                                                onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    toggleBranch(b); 
+                                                }} 
+                                            />
+                                        </span>
+                                    ))
+                                )}
+                            </div>
+                            <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {isDropdownOpen && (
+                            <div className="absolute z-10 mt-1 w-full rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
+                                <div className="p-2 space-y-1 max-h-48 overflow-y-auto">
+                                    {BRANCH_OPTIONS.map((opt) => (
+                                        <label key={opt} onClick={(e) => { e.preventDefault(); toggleBranch(opt); }} className="flex items-center gap-3 px-2 py-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer">
+                                            <div className={`flex h-4 w-4 items-center justify-center rounded border ${branches.includes(opt) ? 'bg-blue-600 border-blue-600' : 'border-zinc-300 dark:border-zinc-700'}`}>
+                                                {branches.includes(opt) && <Check className="h-3 w-3 text-white" />}
+                                            </div>
+                                            <span className="text-sm font-medium">{opt}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium">Semester</label>
