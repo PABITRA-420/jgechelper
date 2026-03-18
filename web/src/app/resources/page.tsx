@@ -65,13 +65,7 @@ export default function ResourcesPage() {
             setLoading(true);
             try {
                 const resourcesRef = collection(db, "resources");
-                const q = query(
-                    resourcesRef,
-                    where("semester", "==", selectedSemester),
-                    // where("visible", "!=", false), // Firestore requires index for complex inequality queries.
-                    // It's safer to filter client-side for this specific use case unless data is massive.
-                    orderBy("createdAt", "desc")
-                );
+                const q = query(resourcesRef);
 
                 const snapshot = await getDocs(q);
 
@@ -81,6 +75,7 @@ export default function ResourcesPage() {
                         ...doc.data(),
                         date: doc.data().createdAt?.toDate().toLocaleDateString() || "Unknown Date"
                     })) as Resource[])
+                    .filter(res => res.semester === selectedSemester)
                     .filter(res => {
                         if (res.branches && Array.isArray(res.branches)) {
                             return res.branches.includes(selectedBranch!);
