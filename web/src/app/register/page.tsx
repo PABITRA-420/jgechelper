@@ -76,9 +76,9 @@ export default function RegisterPage() {
         try {
             await registerWithEmail(name, email, password);
             setVerificationSent(true);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setError(err?.message || "Registration failed. Try again.");
+            setError((err as Error)?.message || "Registration failed. Try again.");
         } finally {
             setLoading(false);
         }

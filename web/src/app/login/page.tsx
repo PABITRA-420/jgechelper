@@ -40,11 +40,12 @@ export default function LoginPage() {
         setError(null);
         try {
             await signInWithGoogle();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Login failed", error);
-            if (error.code === 'auth/popup-closed-by-user') {
+            const err = error as { code?: string };
+            if (err.code === 'auth/popup-closed-by-user') {
                 setError("Sign in popup was closed before completion.");
-            } else if (error.code === 'auth/unauthorized-domain') {
+            } else if (err.code === 'auth/unauthorized-domain') {
                 setError("Domain not authorized in Firebase Console.");
             } else {
                 setError("Google Sign In failed. Please try again.");
@@ -78,8 +79,9 @@ export default function LoginPage() {
         try {
             await resetPassword(email);
             setResetSuccess(true);
-        } catch (err: any) {
-            console.error(err);
+        } catch (error: unknown) {
+            console.error(error);
+            const err = error as { code?: string };
             if (err.code === 'auth/user-not-found') {
                 setError("No account found with this email.");
             } else {

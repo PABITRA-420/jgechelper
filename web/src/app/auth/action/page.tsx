@@ -22,8 +22,10 @@ function AuthActionContent() {
 
     useEffect(() => {
         if (!mode || !oobCode) {
-            setStatus("error");
-            setMessage("Invalid or missing action code.");
+            setTimeout(() => {
+                setStatus("error");
+                setMessage("Invalid or missing action code.");
+            }, 0);
             return;
         }
 
@@ -43,17 +45,18 @@ function AuthActionContent() {
                     setStatus("error");
                     setMessage("Unknown action mode.");
                 }
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error("Action failed:", error);
                 setStatus("error");
+                const err = error as { code?: string; message?: string };
 
                 // Friendly error messages based on Firebase codes
-                if (error.code === "auth/invalid-action-code") {
+                if (err.code === "auth/invalid-action-code") {
                     setMessage("The action code is invalid. This can happen if the code is malformed, expired, or has already been used.");
-                } else if (error.code === "auth/expired-action-code") {
+                } else if (err.code === "auth/expired-action-code") {
                     setMessage("The action code has expired. Please request a new one.");
                 } else {
-                    setMessage(error.message || "An error occurred while processing your request.");
+                    setMessage(err.message || "An error occurred while processing your request.");
                 }
             }
         };
@@ -80,11 +83,12 @@ function AuthActionContent() {
             setMessage("Your password has been successfully reset! You can now sign in with your new password.");
             // Change mode effectively to prevent form showing again
             router.replace("/auth/action?mode=resetComplete", { scroll: false });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
             setIsResetting(false);
             setStatus("error");
-            setMessage(error.message || "Failed to reset password.");
+            const err = error as { message?: string };
+            setMessage(err.message || "Failed to reset password.");
         }
     };
 

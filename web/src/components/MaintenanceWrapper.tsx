@@ -61,11 +61,9 @@ export default function MaintenanceWrapper({ children }: MaintenanceWrapperProps
             if (!storedTime) {
                 const now = Date.now();
                 localStorage.setItem("arrival_time", now.toString());
-                // eslint-disable-next-line react-hooks/set-state-in-effect
-                setArrivalTime(now);
+                setTimeout(() => setArrivalTime(now), 0);
             } else {
-                // eslint-disable-next-line react-hooks/set-state-in-effect
-                setArrivalTime(parseInt(storedTime, 10));
+                setTimeout(() => setArrivalTime(parseInt(storedTime, 10)), 0);
             }
         }
     }, []);

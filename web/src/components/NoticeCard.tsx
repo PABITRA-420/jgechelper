@@ -27,6 +27,7 @@ export function NoticeCard({ notice }: { notice: NoticeProps }) {
                 diff = Date.now() - parsed;
             }
         }
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsNew(diff >= -86400000 && diff < sevenDaysMs);
     }, [notice]);
 

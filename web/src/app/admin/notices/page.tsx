@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Send, Trash2, Eye, EyeOff, Edit2, Paperclip, X, FileText } from "lucide-react";
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 
 // Optional: Define a Notice type
 // interface Notice {
@@ -17,7 +17,17 @@ import { db, storage } from "@/lib/firebase";
 //     createdAt?: any;
 // }
 
-function NoticeForm({ editingNotice, onClearEdit }: { editingNotice: any, onClearEdit: () => void }) {
+type EditNoticeType = {
+    id: string;
+    title: string;
+    category: string;
+    description: string;
+    visible?: boolean;
+    attachmentUrl?: string | null;
+    attachmentName?: string | null;
+};
+
+function NoticeForm({ editingNotice, onClearEdit }: { editingNotice: EditNoticeType | null, onClearEdit: () => void }) {
     const [title, setTitle] = useState("");
     const [category, setCategory] = useState("General");
     const [desc, setDesc] = useState("");
@@ -189,18 +199,18 @@ function NoticeForm({ editingNotice, onClearEdit }: { editingNotice: any, onClea
     );
 }
 
-function NoticeList({ onEdit }: { onEdit: (notice: any) => void }) {
-    const [notices, setNotices] = useState<any[]>([]);
+function NoticeList({ onEdit }: { onEdit: (notice: EditNoticeType) => void }) {
+    const [notices, setNotices] = useState<EditNoticeType[]>([]);
 
     useEffect(() => {
         const q = query(collection(db, "notices"), orderBy("createdAt", "desc"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            setNotices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            setNotices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EditNoticeType)));
         });
         return () => unsubscribe();
     }, []);
 
-    const toggleVisibility = async (id: string, currentStatus: boolean) => {
+    const toggleVisibility = async (id: string, currentStatus?: boolean) => {
         try {
             const isVisible = currentStatus !== false;
             await updateDoc(doc(db, "notices", id), { visible: !isVisible });
@@ -258,7 +268,7 @@ function NoticeList({ onEdit }: { onEdit: (notice: any) => void }) {
 }
 
 export default function AdminNoticesPage() {
-    const [editingNotice, setEditingNotice] = useState<any>(null);
+    const [editingNotice, setEditingNotice] = useState<EditNoticeType | null>(null);
 
     return (
         <div className="space-y-6">

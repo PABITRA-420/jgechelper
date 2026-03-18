@@ -60,8 +60,8 @@ export default function AdminSettingsPage() {
             };
 
             // Clean up camelCase duplicates if desired, but Firestore will just merge.
-            delete (dataToSave as any).maintenanceMode;
-            delete (dataToSave as any).maintenanceEndTime;
+            delete (dataToSave as Record<string, unknown>).maintenanceMode;
+            delete (dataToSave as Record<string, unknown>).maintenanceEndTime;
 
             await setDoc(doc(db, "settings", "general"), dataToSave, { merge: true });
             toast.success("Settings saved successfully.");

@@ -9,10 +9,10 @@ export default function NetworkMonitor() {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setMounted(true);
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsOnline(navigator.onLine);
+        setTimeout(() => {
+            setMounted(true);
+            setIsOnline(navigator.onLine);
+        }, 0);
 
         const handleOnline = () => {
             setIsOnline(true);
