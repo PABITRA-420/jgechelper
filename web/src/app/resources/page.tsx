@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { ResourceCard } from "@/components/ResourceCard";
 import { Search, ChevronRight, ArrowLeft, BookOpen } from "lucide-react";
-import { collection, query, orderBy, getDocs, where } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -59,16 +59,15 @@ export default function ResourcesPage() {
         }
     }, [user, role, authLoading, router]);
 
-    // Fetch resources only when we reach the list view
     useEffect(() => {
-        async function fetchResources() {
+        let unsubscribe: () => void;
+
+        if (view === "resources" && selectedBranch && selectedSemester && role) {
             setLoading(true);
-            try {
-                const resourcesRef = collection(db, "resources");
-                const q = query(resourcesRef);
+            const resourcesRef = collection(db, "resources");
+            const q = query(resourcesRef);
 
-                const snapshot = await getDocs(q);
-
+            unsubscribe = onSnapshot(q, (snapshot) => {
                 const fetchedResources = (snapshot.docs
                     .map(doc => ({
                         id: doc.id,
@@ -93,16 +92,16 @@ export default function ResourcesPage() {
                     });
 
                 setResources(fetchedResources);
-            } catch (error) {
-                console.error("Error fetching resources:", error);
-            } finally {
                 setLoading(false);
-            }
+            }, (error) => {
+                console.error("Error fetching resources:", error);
+                setLoading(false);
+            });
         }
 
-        if (view === "resources" && selectedBranch && selectedSemester && role) {
-            fetchResources();
-        }
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
     }, [view, selectedBranch, selectedSemester, role]);
 
     const handleBack = () => {
