@@ -1,7 +1,7 @@
 "use client";
 
 import { UploadCloud, X, FileText, CheckCircle, AlertCircle, ChevronDown, Check } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { collection, addDoc, serverTimestamp, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -32,6 +32,17 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
     const [semester, setSemester] = useState("1st Semester");
     const [type, setType] = useState("Question Paper");
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     const BRANCH_OPTIONS = ["CSE", "IT", "ECE", "ME", "EE", "CE"];
 
@@ -223,17 +234,32 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
-                    <div className="relative">
+                    <div className="relative" ref={dropdownRef}>
                         <label className="mb-2 block text-sm font-medium">Branches</label>
                         <button
                             type="button"
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            className="w-full flex items-center justify-between rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            className="w-full flex min-h-[42px] items-center justify-between rounded-lg border border-input bg-background text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         >
-                            <span className="truncate pr-4">
-                                {branches.length === 0 ? "Select branches..." : branches.join(', ')}
-                            </span>
-                            <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                            <div className="flex flex-wrap gap-1.5 pr-4">
+                                {branches.length === 0 ? (
+                                    <span className="text-muted-foreground py-0.5">Select branches...</span>
+                                ) : (
+                                    branches.map(b => (
+                                        <span key={b} className="flex items-center gap-1 rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                                            {b}
+                                            <X 
+                                                className="h-3 w-3 cursor-pointer hover:text-red-500 transition-colors" 
+                                                onClick={(e) => { 
+                                                    e.stopPropagation(); 
+                                                    toggleBranch(b); 
+                                                }} 
+                                            />
+                                        </span>
+                                    ))
+                                )}
+                            </div>
+                            <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
                         
                         {isDropdownOpen && (
