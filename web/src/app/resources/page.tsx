@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Navbar } from "@/components/Navbar";
 import { ResourceCard } from "@/components/ResourceCard";
-import { Search, ChevronRight, ArrowLeft, BookOpen } from "lucide-react";
-import { collection, query, orderBy, onSnapshot, where } from "firebase/firestore";
+import { Search, ChevronRight, ArrowLeft, BookOpen, Loader2 } from "lucide-react";
+import { collection, query, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // Define Resource Interface matching the new structure
 interface Resource {
@@ -40,14 +40,26 @@ const SEMESTERS = [
 ];
 
 export default function ResourcesPage() {
-    const [view, setView] = useState<"branches" | "semesters" | "resources">("branches");
-    const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
-    const [selectedSemester, setSelectedSemester] = useState<string | null>(null);
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>}>
+            <ResourcesContent />
+        </Suspense>
+    );
+}
+
+function ResourcesContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Derive state from URL for flawless browser back button support
+    const view = (searchParams.get("view") as "branches" | "semesters" | "resources") || "branches";
+    const selectedBranch = searchParams.get("branch");
+    const selectedSemester = searchParams.get("semester");
+
     const [selectedType, setSelectedType] = useState<string>("All");
 
     const { user, role, loading: authLoading } = useAuth();
-    const router = useRouter();
-
+    
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -104,64 +116,16 @@ export default function ResourcesPage() {
         };
     }, [view, selectedBranch, selectedSemester, role]);
 
-    useEffect(() => {
-        // Read initial state from URL if present
-        const params = new URLSearchParams(window.location.search);
-        const urlView = params.get("view");
-        if (urlView) {
-            setView(urlView as any);
-            const urlBranch = params.get("branch");
-            const urlSemester = params.get("semester");
-            if (urlBranch) setSelectedBranch(urlBranch);
-            if (urlSemester) setSelectedSemester(urlSemester);
-            
-            // Replace dummy state
-            window.history.replaceState(
-                { view: urlView, branch: urlBranch, semester: urlSemester },
-                "",
-                window.location.search
-            );
-        }
-
-        const handlePopState = (event: PopStateEvent) => {
-            const state = event.state as { view?: string, branch?: string, semester?: string } | null;
-            if (state && state.view) {
-                setView(state.view as any);
-                if (state.branch) setSelectedBranch(state.branch);
-                if (state.semester) setSelectedSemester(state.semester);
-            } else {
-                setView("branches");
-                setSelectedBranch(null);
-                setSelectedSemester(null);
-            }
-        };
-
-        window.addEventListener("popstate", handlePopState);
-        return () => window.removeEventListener("popstate", handlePopState);
-    }, []);
-
     const handleBack = () => {
-        window.history.back();
+        router.back();
     };
 
     const handleBranchSelect = (branchId: string) => {
-        setSelectedBranch(branchId);
-        setView("semesters");
-        window.history.pushState(
-            { view: "semesters", branch: branchId },
-            "",
-            window.location.pathname + "?view=semesters&branch=" + branchId
-        );
+        router.push(`?view=semesters&branch=${branchId}`);
     };
 
     const handleSemesterSelect = (semester: string) => {
-        setSelectedSemester(semester);
-        setView("resources");
-        window.history.pushState(
-            { view: "resources", branch: selectedBranch, semester: semester },
-            "",
-            window.location.pathname + `?view=resources&branch=${selectedBranch}&semester=${semester}`
-        );
+        router.push(`?view=resources&branch=${selectedBranch}&semester=${semester}`);
     };
 
     return (

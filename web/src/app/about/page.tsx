@@ -133,7 +133,7 @@ export default function AboutPage() {
                         Have suggestions, found a bug, or just want to say hi? We'd love to hear from you. Your feedback helps make JGEC Helper better for everyone.
                     </p>
                     <a
-                        href="mailto:admin.jgechelper@gmail.com?subject=Feedback&body=Dear%20Admin%2C%0A%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E ,"
+                        href="mailto:admin.jgechelper@gmail.com?subject=Feedback&body=Dear%20Admin%2C%0A%0A"
                         className="inline-flex items-center justify-center rounded-xl bg-foreground px-6 py-3 text-sm font-medium text-background transition-transform hover:scale-105 active:scale-95 gap-2"
                     >
                         <Mail className="h-4 w-4" />
