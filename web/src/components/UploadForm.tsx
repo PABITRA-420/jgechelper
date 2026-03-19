@@ -1,6 +1,6 @@
 "use client";
 
-import { UploadCloud, X, FileText, CheckCircle, AlertCircle, ChevronDown, Check } from "lucide-react";
+import { UploadCloud, X, FileText, CheckCircle, AlertCircle, ChevronDown, Check, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { collection, addDoc, serverTimestamp, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -22,6 +22,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
     const [file, setFile] = useState<File | null>(null);
     const [existingAttachment, setExistingAttachment] = useState<{ url: string | null, name: string | null }>({ url: null, name: null });
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -69,6 +70,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
             setFile(null);
             setSuccess(false);
             setError(null);
+            setUploadProgress(0);
         } else {
             resetForm();
         }
@@ -84,6 +86,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
         setExistingAttachment({ url: null, name: null });
         setSuccess(false);
         setError(null);
+        setUploadProgress(0);
     };
 
     const handleDrag = (e: React.DragEvent) => {
@@ -139,21 +142,41 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
             let currentFileName = existingAttachment.name;
 
             if (file) {
-                // 1. Upload File to Vercel Blob via Next.js API
-                const uploadResponse = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
-                    method: "POST",
-                    body: file,
-                    headers: {
-                        'x-upload-secret': process.env.NEXT_PUBLIC_UPLOAD_SECRET || '',
-                    },
+                // 1. Upload File to Vercel Blob via Next.js API with progress tracking
+                setUploadProgress(0);
+                const blob = await new Promise<any>((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', `/api/upload?filename=${encodeURIComponent(file.name)}`);
+                    xhr.setRequestHeader('x-upload-secret', process.env.NEXT_PUBLIC_UPLOAD_SECRET || '');
+
+                    xhr.upload.onprogress = (event) => {
+                        if (event.lengthComputable) {
+                            const percentComplete = Math.round((event.loaded / event.total) * 100);
+                            setUploadProgress(percentComplete);
+                        }
+                    };
+
+                    xhr.onload = () => {
+                        if (xhr.status >= 200 && xhr.status < 300) {
+                            try {
+                                resolve(JSON.parse(xhr.responseText));
+                            } catch (e) {
+                                reject(new Error("Invalid response from server"));
+                            }
+                        } else {
+                            try {
+                                const errorData = JSON.parse(xhr.responseText);
+                                reject(new Error(errorData.error || "Failed to upload file"));
+                            } catch (e) {
+                                reject(new Error(`Failed to upload file: ${xhr.statusText}`));
+                            }
+                        }
+                    };
+
+                    xhr.onerror = () => reject(new Error("Network error during upload"));
+                    xhr.send(file);
                 });
 
-                if (!uploadResponse.ok) {
-                    const errorData = await uploadResponse.json();
-                    throw new Error(errorData.error || "Failed to upload file");
-                }
-
-                const blob = await uploadResponse.json();
                 currentDownloadURL = blob.url;
                 currentFileName = file.name;
             }
@@ -246,10 +269,10 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                                     <span className="text-muted-foreground py-0.5">Select branches...</span>
                                 ) : (
                                     branches.map(b => (
-                                        <span key={b} className="flex items-center gap-1 rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                                        <span key={b} className="flex items-center gap-1.5 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200/50 dark:border-blue-500/20">
                                             {b}
                                             <X 
-                                                className="h-3 w-3 cursor-pointer hover:text-red-500 transition-colors" 
+                                                className="h-3 w-3 cursor-pointer opacity-70 hover:opacity-100 transition-opacity" 
                                                 onClick={(e) => { 
                                                     e.stopPropagation(); 
                                                     toggleBranch(b); 
@@ -306,8 +329,11 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
 
                 {/* Drag & Drop Zone */}
                 <div
-                    className={`relative mt-4 flex h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-colors ${dragActive ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10" : "border-zinc-300 dark:border-zinc-700"
-                        }`}
+                    className={`relative mt-4 flex h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-200 ease-in-out ${
+                        dragActive 
+                            ? "border-blue-500 bg-blue-50/80 scale-[1.01] shadow-sm dark:border-blue-500 dark:bg-blue-500/10" 
+                            : "border-zinc-300 bg-zinc-50/50 hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/50 dark:hover:bg-zinc-800/80"
+                    }`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
@@ -321,42 +347,69 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                     />
 
                     {file || existingAttachment.url ? (
-                        <div className="flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                            <FileText className="h-4 w-4 text-blue-500" />
-                            {file ? file.name : existingAttachment.name}
-                            <button onClick={(e) => { e.preventDefault(); setFile(null); setExistingAttachment({ url: null, name: null }); }} className="rounded-full p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                                <X className="h-4 w-4 text-red-500" />
+                        <div className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 shadow-sm dark:border-zinc-700/50 dark:bg-zinc-800">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-500/20">
+                                <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <span className="max-w-[200px] truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                                {file ? file.name : existingAttachment.name}
+                            </span>
+                            <button 
+                                onClick={(e) => { e.preventDefault(); setFile(null); setExistingAttachment({ url: null, name: null }); }} 
+                                className="ml-2 rounded-full p-1 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/20 transition-colors"
+                            >
+                                <X className="h-4 w-4" />
                             </button>
                         </div>
                     ) : (
                         <>
-                            <UploadCloud className={`mb-2 h-8 w-8 ${dragActive ? "text-blue-500" : "text-zinc-400"}`} />
-                            <p className="text-sm text-zinc-500">
-                                <span className="font-semibold text-blue-500">Click to upload</span> or drag and drop
+                            <div className="mb-2 rounded-full bg-zinc-100 p-2 shadow-sm dark:bg-zinc-800/80">
+                                <UploadCloud className={`h-5 w-5 ${dragActive ? "text-blue-500" : "text-zinc-500 dark:text-zinc-400"}`} />
+                            </div>
+                            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                                <span className="font-semibold text-blue-600 dark:text-blue-400">Click to upload</span> or drag and drop
                             </p>
-                            <p className="text-xs text-zinc-400">PDF, DOC up to 10MB</p>
+                            <p className="text-xs text-zinc-400 mt-1">PDF, DOC, DOCX up to 10MB</p>
                         </>
                     )}
                 </div>
 
+                {uploading && uploadProgress > 0 && (
+                    <div className="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
+                        <div className="mb-3 flex items-center justify-between text-xs font-semibold">
+                            <span className="text-zinc-600 dark:text-zinc-400 truncate pr-4">
+                                {uploadProgress < 100 ? `Uploading ${file?.name}...` : "Processing file & saving data..."}
+                            </span>
+                            <span className="text-blue-600 dark:text-blue-400 whitespace-nowrap">{uploadProgress}%</span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200/80 dark:bg-zinc-800">
+                            <div
+                                className="h-full bg-blue-500 transition-all duration-300 ease-out"
+                                style={{ width: `${uploadProgress}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
+
                 {error && (
                     <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/10 dark:text-red-400">
-                        <AlertCircle className="h-4 w-4" />
-                        {error}
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        <span>{error}</span>
                     </div>
                 )}
 
                 {success && (
                     <div className="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-600 dark:bg-green-900/10 dark:text-green-400">
-                        <CheckCircle className="h-4 w-4" />
-                        {editingResource ? "Resource updated successfully!" : "Resource uploaded successfully!"}
+                        <CheckCircle className="h-4 w-4 shrink-0" />
+                        <span>{editingResource ? "Resource updated successfully!" : "Resource uploaded successfully!"}</span>
                     </div>
                 )}
 
                 <button
                     disabled={uploading}
-                    className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100"
                 >
+                    {uploading && <Loader2 className="h-4 w-4 animate-spin text-white/70" />}
                     {uploading ? "Saving..." : (editingResource ? "Update Resource" : "Upload Resource")}
                 </button>
             </form>

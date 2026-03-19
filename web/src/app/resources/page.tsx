@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Navbar } from "@/components/Navbar";
 import { ResourceCard } from "@/components/ResourceCard";
-import { Search, ChevronRight, ArrowLeft, BookOpen } from "lucide-react";
-import { collection, query, orderBy, onSnapshot, where } from "firebase/firestore";
+import { Search, ChevronRight, ArrowLeft, BookOpen, Loader2 } from "lucide-react";
+import { collection, query, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // Define Resource Interface matching the new structure
 interface Resource {
@@ -40,14 +40,26 @@ const SEMESTERS = [
 ];
 
 export default function ResourcesPage() {
-    const [view, setView] = useState<"branches" | "semesters" | "resources">("branches");
-    const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
-    const [selectedSemester, setSelectedSemester] = useState<string | null>(null);
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>}>
+            <ResourcesContent />
+        </Suspense>
+    );
+}
+
+function ResourcesContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Derive state from URL for flawless browser back button support
+    const view = (searchParams.get("view") as "branches" | "semesters" | "resources") || "branches";
+    const selectedBranch = searchParams.get("branch");
+    const selectedSemester = searchParams.get("semester");
+
     const [selectedType, setSelectedType] = useState<string>("All");
 
     const { user, role, loading: authLoading } = useAuth();
-    const router = useRouter();
-
+    
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -105,21 +117,15 @@ export default function ResourcesPage() {
     }, [view, selectedBranch, selectedSemester, role]);
 
     const handleBack = () => {
-        if (view === "resources") setView("semesters");
-        else if (view === "semesters") {
-            setSelectedBranch(null);
-            setView("branches");
-        }
+        router.back();
     };
 
     const handleBranchSelect = (branchId: string) => {
-        setSelectedBranch(branchId);
-        setView("semesters");
+        router.push(`?view=semesters&branch=${branchId}`);
     };
 
     const handleSemesterSelect = (semester: string) => {
-        setSelectedSemester(semester);
-        setView("resources");
+        router.push(`?view=resources&branch=${selectedBranch}&semester=${semester}`);
     };
 
     return (
@@ -159,7 +165,15 @@ export default function ResourcesPage() {
 
             <div className="container mt-8 max-w-5xl px-4 md:px-6">
 
-                {/* STEP 1: BRANCH SELECTION */}
+                {authLoading ? (
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-pulse">
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <div key={i} className="glass h-[180px] rounded-2xl bg-zinc-200/50 dark:bg-zinc-800/50"></div>
+                        ))}
+                    </div>
+                ) : (
+                    <>
+                        {/* STEP 1: BRANCH SELECTION */}
                 {view === "branches" && (
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {BRANCHES.map((branch) => (
@@ -261,6 +275,8 @@ export default function ResourcesPage() {
                             </div>
                         )}
                     </div>
+                )}
+                    </>
                 )}
             </div>
         </main>

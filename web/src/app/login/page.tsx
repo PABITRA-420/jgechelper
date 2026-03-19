@@ -59,9 +59,14 @@ export default function LoginPage() {
         setError(null);
         try {
             await signInWithEmail(email, password);
-        } catch (err) {
-            console.error(err);
-            setError("Invalid email or password");
+        } catch (error: unknown) {
+            console.error(error);
+            const err = error as { code?: string };
+            if (err.code === "auth/invalid-credential" || err.code === "auth/user-not-found") {
+                setError("Account not found. Please make sure you have registered first!");
+            } else {
+                setError("Invalid email or password. Please try again.");
+            }
         } finally {
             setLoading(false);
         }
