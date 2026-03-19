@@ -132,8 +132,8 @@ export default function AboutPage() {
                     <p className="text-muted-foreground mb-6 leading-relaxed">
                         Have suggestions, found a bug, or just want to say hi? We'd love to hear from you. Your feedback helps make JGEC Helper better for everyone.
                     </p>
-                    <a 
-                        href="mailto:admin.jgechelper@gmail.com?subject=Feedback&body=Dear%20Admin%2C%0A%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E  this demo gmail,"
+                    <a
+                        href="mailto:admin.jgechelper@gmail.com?subject=Feedback&body=Dear%20Admin%2C%0A%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E%20%E2%80%8E ,"
                         className="inline-flex items-center justify-center rounded-xl bg-foreground px-6 py-3 text-sm font-medium text-background transition-transform hover:scale-105 active:scale-95 gap-2"
                     >
                         <Mail className="h-4 w-4" />
@@ -144,7 +144,7 @@ export default function AboutPage() {
                 {/* Footer / Tribute */}
                 <footer className="mt-16 pb-8 text-center text-sm text-muted-foreground animate-fade-in-up">
                     <p className="flex items-center justify-center gap-1.5">
-                        Made with <span className="text-red-500 text-lg leading-none">♥</span> by 
+                        Made with <span className="text-red-500 text-lg leading-none">♥</span> by
                         <span className="font-semibold text-foreground">Sarkar Technology</span>
                     </p>
                     <p className="mt-2 text-xs">
