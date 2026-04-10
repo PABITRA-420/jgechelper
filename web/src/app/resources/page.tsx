@@ -8,6 +8,7 @@ import { collection, query, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Define Resource Interface matching the new structure
 interface Resource {
@@ -163,19 +164,19 @@ function ResourcesContent() {
                 </div>
             </div>
 
-            <div className="container mt-8 max-w-5xl px-4 md:px-6">
+            <div className="container mt-8 px-4 md:px-6">
 
                 {authLoading ? (
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-pulse">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-pulse">
                         {[1, 2, 3, 4, 5, 6].map((i) => (
-                            <div key={i} className="glass h-[180px] rounded-2xl bg-zinc-200/50 dark:bg-zinc-800/50"></div>
+                            <div key={i} style={{ animationDelay: `${i * 100}ms` }} className="glass h-[180px] rounded-2xl bg-zinc-200/50 dark:bg-zinc-800/50"></div>
                         ))}
                     </div>
                 ) : (
-                    <>
+                    <AnimatePresence mode="wait">
                         {/* STEP 1: BRANCH SELECTION */}
                 {view === "branches" && (
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <motion.div key="branches" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {BRANCHES.map((branch) => (
                             <button
                                 key={branch.id}
@@ -194,12 +195,12 @@ function ResourcesContent() {
                                 </div>
                             </button>
                         ))}
-                    </div>
+                    </motion.div>
                 )}
 
                 {/* STEP 2: SEMESTER SELECTION */}
                 {view === "semesters" && (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <motion.div key="semesters" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         {SEMESTERS.map((sem, index) => (
                             <button
                                 key={sem}
@@ -215,12 +216,12 @@ function ResourcesContent() {
                                 </div>
                             </button>
                         ))}
-                    </div>
+                    </motion.div>
                 )}
 
                 {/* STEP 3: RESOURCES LIST */}
                 {view === "resources" && (
-                    <div className="space-y-6">
+                    <motion.div key="resources" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="space-y-6">
                         {resources.length > 0 && (
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="flex flex-wrap gap-2">
@@ -251,13 +252,13 @@ function ResourcesContent() {
                         )}
 
                         {loading ? (
-                            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                 {[1, 2, 3].map((i) => (
-                                    <div key={i} className="h-48 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-800"></div>
+                                    <div key={i} style={{ animationDelay: `${i * 100}ms` }} className="h-48 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-800"></div>
                                 ))}
                             </div>
                         ) : resources.length > 0 ? (
-                            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                 {resources
                                     .filter(r => selectedType === "All" || r.type === selectedType)
                                     .filter(r => (r.title || "").toLowerCase().includes(searchQuery.toLowerCase()) || (r.subject || "").toLowerCase().includes(searchQuery.toLowerCase()))
@@ -272,11 +273,19 @@ function ResourcesContent() {
                                 <p className="text-sm text-muted-foreground">
                                     No content uploaded for {selectedBranch} {selectedSemester} yet.
                                 </p>
+                                {role === "admin" && (
+                                    <button
+                                        onClick={() => router.push('/admin/resources')}
+                                        className="mt-6 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+                                    >
+                                        Upload Resource
+                                    </button>
+                                )}
                             </div>
                         )}
-                    </div>
+                    </motion.div>
                 )}
-                    </>
+                    </AnimatePresence>
                 )}
             </div>
         </main>

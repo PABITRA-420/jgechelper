@@ -78,18 +78,18 @@ export default function NoticesPage() {
 
             {/* Header */}
             <div className="bg-zinc-50 pt-32 pb-12 dark:bg-zinc-900/50">
-                <div className="container px-4 md:px-6">
+                <div className="container px-4 md:px-6 max-w-4xl mx-auto">
                     <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Notice Board</h1>
                     <p className="mt-2 text-muted-foreground">Stay updated with the latest official announcements.</p>
                 </div>
             </div>
 
-            <div className="container mt-8 max-w-4xl px-4 md:px-6">
+            <div className="container mt-8 max-w-4xl px-4 md:px-6 mx-auto">
                 <div className="flex flex-col gap-4">
                     {loading ? (
                         <div className="flex flex-col gap-4">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className="h-32 w-full animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-800"></div>
+                                <div key={i} style={{ animationDelay: `${i * 100}ms` }} className="h-32 w-full animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-800"></div>
                             ))}
                         </div>
                     ) : notices.length > 0 ? (
@@ -103,6 +103,14 @@ export default function NoticesPage() {
                             </div>
                             <h3 className="text-lg font-medium text-foreground">No notices yet</h3>
                             <p className="mt-1 max-w-sm text-sm text-muted-foreground">We haven&apos;t published any official announcements yet. Check back later!</p>
+                            {role === "admin" && (
+                                <button
+                                    onClick={() => router.push('/admin/notices')}
+                                    className="mt-6 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+                                >
+                                    Publish Notice
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>

@@ -29,13 +29,13 @@ export default function SettingsPage() {
 
             {/* Header Area */}
             <div className="bg-zinc-50 pt-32 pb-12 dark:bg-zinc-900/50 border-b border-border">
-                <div className="container px-4 md:px-6">
+                <div className="container px-4 md:px-6 max-w-5xl mx-auto">
                     <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Account Settings</h1>
                     <p className="mt-2 text-muted-foreground">Manage your profile and preferences.</p>
                 </div>
             </div>
 
-            <div className="container mt-8 max-w-5xl px-4 md:px-6">
+            <div className="container mt-8 max-w-5xl px-4 md:px-6 mx-auto">
                 <div className="grid gap-8 md:grid-cols-[250px_1fr]">
 
                     {/* Sidebar Nav */}

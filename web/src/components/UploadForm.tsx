@@ -51,7 +51,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
         if (editingResource) {
             setTitle((editingResource.title as string) || "");
             setSubject((editingResource.subject as string) || "");
-            
+
             // Handle legacy 'branch' field or new 'branches' array
             let initialBranches = ["CSE"];
             if (editingResource.branches && Array.isArray(editingResource.branches)) {
@@ -118,8 +118,8 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
     };
 
     const toggleBranch = (branchStr: string) => {
-        setBranches(prev => 
-            prev.includes(branchStr) 
+        setBranches(prev =>
+            prev.includes(branchStr)
                 ? prev.filter(b => b !== branchStr)
                 : [...prev, branchStr]
         );
@@ -271,12 +271,12 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                                     branches.map(b => (
                                         <span key={b} className="flex items-center gap-1.5 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-200/50 dark:border-blue-500/20">
                                             {b}
-                                            <X 
-                                                className="h-3 w-3 cursor-pointer opacity-70 hover:opacity-100 transition-opacity" 
-                                                onClick={(e) => { 
-                                                    e.stopPropagation(); 
-                                                    toggleBranch(b); 
-                                                }} 
+                                            <X
+                                                className="h-3 w-3 cursor-pointer opacity-70 hover:opacity-100 transition-opacity"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleBranch(b);
+                                                }}
                                             />
                                         </span>
                                     ))
@@ -284,7 +284,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                             </div>
                             <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
-                        
+
                         {isDropdownOpen && (
                             <div className="absolute z-10 mt-1 w-full rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
                                 <div className="p-2 space-y-1 max-h-48 overflow-y-auto">
@@ -329,11 +329,10 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
 
                 {/* Drag & Drop Zone */}
                 <div
-                    className={`relative mt-4 flex h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-200 ease-in-out ${
-                        dragActive 
-                            ? "border-blue-500 bg-blue-50/80 scale-[1.01] shadow-sm dark:border-blue-500 dark:bg-blue-500/10" 
+                    className={`relative mt-4 flex h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-200 ease-in-out ${dragActive
+                            ? "border-blue-500 bg-blue-50/80 scale-[1.01] shadow-sm dark:border-blue-500 dark:bg-blue-500/10"
                             : "border-zinc-300 bg-zinc-50/50 hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/50 dark:hover:bg-zinc-800/80"
-                    }`}
+                        }`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
@@ -354,8 +353,8 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                             <span className="max-w-[200px] truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
                                 {file ? file.name : existingAttachment.name}
                             </span>
-                            <button 
-                                onClick={(e) => { e.preventDefault(); setFile(null); setExistingAttachment({ url: null, name: null }); }} 
+                            <button
+                                onClick={(e) => { e.preventDefault(); setFile(null); setExistingAttachment({ url: null, name: null }); }}
                                 className="ml-2 rounded-full p-1 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/20 transition-colors"
                             >
                                 <X className="h-4 w-4" />
@@ -369,7 +368,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                             <p className="text-sm text-zinc-600 dark:text-zinc-300">
                                 <span className="font-semibold text-blue-600 dark:text-blue-400">Click to upload</span> or drag and drop
                             </p>
-                            <p className="text-xs text-zinc-400 mt-1">PDF, DOC, DOCX up to 10MB</p>
+                            <p className="text-xs text-zinc-400 mt-1">PDF, DOC, DOCX up to 5 MB</p>
                         </>
                     )}
                 </div>
