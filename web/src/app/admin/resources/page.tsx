@@ -23,27 +23,46 @@ type ResourceType = {
 function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) {
     const [resources, setResources] = useState<ResourceType[]>([]);
     const [loading, setLoading] = useState(true);
+    const [sortBy, setSortBy] = useState<"newest" | "oldest" | "title" | "subject" | "manual">("newest");
 
     useEffect(() => {
-        // Fetch all and sort client-side by orderSequence (asc), then by createdAt (desc)
+        // Fetch all resources and update state without manual sorting
         const q = query(collection(db, "resources"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ResourceType));
-
-            docs.sort((a: ResourceType, b: ResourceType) => {
-                const orderA = a.orderSequence ?? Number.MAX_SAFE_INTEGER;
-                const orderB = b.orderSequence ?? Number.MAX_SAFE_INTEGER;
-                if (orderA !== orderB) return orderA - orderB;
-                const timeA = a.createdAt?.toMillis() || 0;
-                const timeB = b.createdAt?.toMillis() || 0;
-                return timeB - timeA; // Descending time
-            });
-
             setResources(docs);
             setLoading(false);
         });
         return () => unsubscribe();
     }, []);
+
+    const sortedResources = [...resources].sort((a, b) => {
+        if (sortBy === "manual") {
+            const orderA = a.orderSequence ?? Number.MAX_SAFE_INTEGER;
+            const orderB = b.orderSequence ?? Number.MAX_SAFE_INTEGER;
+            if (orderA !== orderB) return orderA - orderB;
+            const timeA = a.createdAt?.toMillis() || 0;
+            const timeB = b.createdAt?.toMillis() || 0;
+            return timeB - timeA;
+        }
+        if (sortBy === "newest") {
+            const timeA = a.createdAt?.toMillis() || 0;
+            const timeB = b.createdAt?.toMillis() || 0;
+            return timeB - timeA;
+        }
+        if (sortBy === "oldest") {
+            const timeA = a.createdAt?.toMillis() || 0;
+            const timeB = b.createdAt?.toMillis() || 0;
+            return timeA - timeB;
+        }
+        if (sortBy === "title") {
+            return (a.title || "").localeCompare(b.title || "");
+        }
+        if (sortBy === "subject") {
+            return (a.subject || "").localeCompare(b.subject || "");
+        }
+        return 0;
+    });
 
     const toggleVisibility = async (id: string, currentStatus?: boolean) => {
         try {
@@ -66,9 +85,9 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
     }
 
     const moveUp = async (index: number) => {
-        if (index === 0) return;
-        const current = resources[index];
-        const prev = resources[index - 1];
+        if (index === 0 || sortBy !== "manual") return;
+        const current = sortedResources[index];
+        const prev = sortedResources[index - 1];
 
         const currentOrder = current.orderSequence ?? index;
         const prevOrder = prev.orderSequence ?? (index - 1);
@@ -82,9 +101,9 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
     }
 
     const moveDown = async (index: number) => {
-        if (index === resources.length - 1) return;
-        const current = resources[index];
-        const next = resources[index + 1];
+        if (index === sortedResources.length - 1 || sortBy !== "manual") return;
+        const current = sortedResources[index];
+        const next = sortedResources[index + 1];
 
         const currentOrder = current.orderSequence ?? index;
         const nextOrder = next.orderSequence ?? (index + 1);
@@ -100,45 +119,65 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
     if (loading) return <div className="text-center text-sm text-muted-foreground">Loading resources...</div>;
 
     return (
-        <div className="space-y-3">
-            {resources.map((resource, index) => (
-                <div key={resource.id} className="flex flex-col gap-4 rounded-lg border border-zinc-100 bg-zinc-50 p-4 transition-all hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:bg-zinc-900 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-start gap-3">
-                        {/* Order Controls */}
-                        <div className="flex flex-col items-center gap-1 opacity-50 transition-opacity hover:opacity-100 sm:mr-2">
-                            <button
-                                onClick={() => moveUp(index)}
-                                disabled={index === 0}
-                                className="rounded bg-zinc-200 p-0.5 text-zinc-600 hover:bg-zinc-300 disabled:opacity-30 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
-                                title="Move Up"
-                            >
-                                <ArrowUp className="h-3 w-3" />
-                            </button>
-                            <button
-                                onClick={() => moveDown(index)}
-                                disabled={index === resources.length - 1}
-                                className="rounded bg-zinc-200 p-0.5 text-zinc-600 hover:bg-zinc-300 disabled:opacity-30 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
-                                title="Move Down"
-                            >
-                                <ArrowDown className="h-3 w-3" />
-                            </button>
-                        </div>
+        <div className="space-y-4">
+            <div className="flex items-center justify-end">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-zinc-500 font-medium whitespace-nowrap">Sort by:</span>
+                    <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as any)}
+                        className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                    >
+                        <option value="newest">Newest First (Default)</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="title">Title (A-Z)</option>
+                        <option value="subject">Subject</option>
+                        <option value="manual">Custom Order</option>
+                    </select>
+                </div>
+            </div>
 
-                        <div className="rounded-lg bg-blue-500/10 p-2 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
-                            <FileText className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="font-medium">{resource.title}</p>
-                            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                                <span className="rounded bg-zinc-200 px-1.5 py-0.5 dark:bg-zinc-800">{resource.branches ? resource.branches.join(', ') : resource.branch}</span>
-                                <span className="rounded bg-zinc-200 px-1.5 py-0.5 dark:bg-zinc-800">{resource.semester}</span>
-                                <span>• {resource.subject}</span>
-                                <span>• {resource.type || "Unknown"}</span>
+            <div className="space-y-3">
+                {sortedResources.map((resource, index) => (
+                    <div key={resource.id} className="flex flex-col gap-4 rounded-lg border border-zinc-100 bg-zinc-50 p-4 transition-all hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:bg-zinc-900 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-3">
+                            {/* Order Controls - Only visible in manual sort mode */}
+                            {sortBy === "manual" && (
+                                <div className="flex flex-col items-center gap-1 opacity-50 transition-opacity hover:opacity-100 sm:mr-2">
+                                    <button
+                                        onClick={() => moveUp(index)}
+                                        disabled={index === 0}
+                                        className="rounded bg-zinc-200 p-0.5 text-zinc-600 hover:bg-zinc-300 disabled:opacity-30 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                                        title="Move Up"
+                                    >
+                                        <ArrowUp className="h-3 w-3" />
+                                    </button>
+                                    <button
+                                        onClick={() => moveDown(index)}
+                                        disabled={index === sortedResources.length - 1}
+                                        className="rounded bg-zinc-200 p-0.5 text-zinc-600 hover:bg-zinc-300 disabled:opacity-30 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                                        title="Move Down"
+                                    >
+                                        <ArrowDown className="h-3 w-3" />
+                                    </button>
+                                </div>
+                            )}
+
+                            <div className="rounded-lg bg-blue-500/10 p-2 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
+                                <FileText className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <p className="font-medium">{resource.title}</p>
+                                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                    <span className="rounded bg-zinc-200 px-1.5 py-0.5 dark:bg-zinc-800">{resource.branches ? resource.branches.join(', ') : resource.branch}</span>
+                                    <span className="rounded bg-zinc-200 px-1.5 py-0.5 dark:bg-zinc-800">{resource.semester}</span>
+                                    <span>• {resource.subject}</span>
+                                    <span>• {resource.type || "Unknown"}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <div className="flex items-center gap-2 self-end sm:self-auto">
                         <button
                             onClick={() => onEdit(resource)}
                             className="rounded p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10"
@@ -180,6 +219,7 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
                     <p className="text-sm text-muted-foreground">No resources uploaded yet.</p>
                 </div>
             )}
+            </div>
         </div>
     )
 }

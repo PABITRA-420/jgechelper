@@ -54,6 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const isVerified = isEmailUser ? currentUser.emailVerified : true;
 
                 setUser(currentUser);
+                //CHANGE DONE HERE//
+                setRole(null); // IMMEDIATE FIX: Clear any old role state while we fetch the new one from Firestore
 
                 // If not verified, we don't fetch role to prevent access to role-protected features
                 if (isEmailUser && !isVerified) {
