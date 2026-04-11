@@ -4,7 +4,7 @@ import { UploadForm } from "@/components/UploadForm";
 import { useState, useEffect } from "react";
 import { collection, query, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Eye, EyeOff, Trash2, FileText, ExternalLink, Edit2, ArrowUp, ArrowDown } from "lucide-react";
+import { Eye, EyeOff, Trash2, FileText, ExternalLink, Edit2, ArrowUp, ArrowDown, RotateCcw, Archive } from "lucide-react";
 
 type ResourceType = {
     id: string;
@@ -18,12 +18,14 @@ type ResourceType = {
     visible?: boolean;
     orderSequence?: number;
     createdAt?: { toMillis: () => number };
+    isDeleted?: boolean;
 };
 
 function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) {
     const [resources, setResources] = useState<ResourceType[]>([]);
     const [loading, setLoading] = useState(true);
     const [sortBy, setSortBy] = useState<"newest" | "oldest" | "title" | "subject" | "manual">("newest");
+    const [viewTrash, setViewTrash] = useState(false);
 
     useEffect(() => {
         // Fetch all resources and update state without manual sorting
@@ -36,7 +38,9 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
         return () => unsubscribe();
     }, []);
 
-    const sortedResources = [...resources].sort((a, b) => {
+    const sortedResources = [...resources]
+        .filter(r => viewTrash ? r.isDeleted === true : (r.isDeleted !== true))
+        .sort((a, b) => {
         if (sortBy === "manual") {
             const orderA = a.orderSequence ?? Number.MAX_SAFE_INTEGER;
             const orderB = b.orderSequence ?? Number.MAX_SAFE_INTEGER;
@@ -75,12 +79,21 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
     }
 
     const deleteResource = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this resource? This cannot be undone.")) return;
+        if (!confirm("Are you sure you want to move this resource to trash?")) return;
         try {
-            await deleteDoc(doc(db, "resources", id));
+            await updateDoc(doc(db, "resources", id), { isDeleted: true });
         } catch (err) {
-            console.error("Error deleting resource:", err);
-            alert("Failed to delete resource");
+            console.error("Error moving resource to trash:", err);
+            alert("Failed to move resource to trash");
+        }
+    }
+
+    const restoreResource = async (id: string) => {
+        try {
+            await updateDoc(doc(db, "resources", id), { isDeleted: false });
+        } catch (err) {
+            console.error("Error restoring resource:", err);
+            alert("Failed to restore resource");
         }
     }
 
@@ -120,13 +133,21 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                    onClick={() => setViewTrash(!viewTrash)}
+                    className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${viewTrash ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'}`}
+                >
+                    <Archive className="h-4 w-4" />
+                    {viewTrash ? 'View Active Resources' : 'View Trash'}
+                </button>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-zinc-500 font-medium whitespace-nowrap">Sort by:</span>
                     <select
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value as any)}
                         className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                        disabled={viewTrash}
                     >
                         <option value="newest">Newest First (Default)</option>
                         <option value="oldest">Oldest First</option>
@@ -196,27 +217,39 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
                             <ExternalLink className="h-4 w-4" />
                         </a>
 
-                        <button
-                            onClick={() => toggleVisibility(resource.id, resource.visible)}
-                            className={`rounded p-2 text-xs font-bold transition-colors ${resource.visible === false ? 'bg-zinc-200 text-zinc-500' : 'bg-green-100 text-green-600'}`}
-                            title={resource.visible === false ? "Show Resource" : "Hide Resource"}
-                        >
-                            {resource.visible === false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
+                        {!viewTrash && (
+                            <button
+                                onClick={() => toggleVisibility(resource.id, resource.visible)}
+                                className={`rounded p-2 text-xs font-bold transition-colors ${resource.visible === false ? 'bg-zinc-200 text-zinc-500' : 'bg-green-100 text-green-600'}`}
+                                title={resource.visible === false ? "Show Resource" : "Hide Resource"}
+                            >
+                                {resource.visible === false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                        )}
 
-                        <button
-                            onClick={() => deleteResource(resource.id)}
-                            className="rounded p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"
-                            title="Delete Resource"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
+                        {viewTrash ? (
+                            <button
+                                onClick={() => restoreResource(resource.id)}
+                                className="rounded p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10"
+                                title="Restore Resource"
+                            >
+                                <RotateCcw className="h-4 w-4" />
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => deleteResource(resource.id)}
+                                className="rounded p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"
+                                title="Move to Trash"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </button>
+                        )}
                     </div>
                 </div>
             ))}
-            {resources.length === 0 && (
+            {resources.filter(r => viewTrash ? r.isDeleted === true : (r.isDeleted !== true)).length === 0 && (
                 <div className="flex h-32 flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 text-center dark:border-zinc-800">
-                    <p className="text-sm text-muted-foreground">No resources uploaded yet.</p>
+                    <p className="text-sm text-muted-foreground">{viewTrash ? "Trash is empty." : "No resources uploaded yet."}</p>
                 </div>
             )}
             </div>

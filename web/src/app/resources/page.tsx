@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { Navbar } from "@/components/Navbar";
 import { ResourceCard } from "@/components/ResourceCard";
 import { Search, ChevronRight, ArrowLeft, BookOpen, Loader2 } from "lucide-react";
-import { collection, query, onSnapshot } from "firebase/firestore";
+import { collection, query, onSnapshot, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -24,6 +24,7 @@ interface Resource {
     createdAt: { toDate: () => Date; toMillis: () => number };
     visible?: boolean;
     orderSequence?: number;
+    isDeleted?: boolean;
 }
 
 const BRANCHES = [
@@ -78,7 +79,7 @@ function ResourcesContent() {
         if (view === "resources" && selectedBranch && selectedSemester && role) {
             setLoading(true);
             const resourcesRef = collection(db, "resources");
-            const q = query(resourcesRef);
+            const q = query(resourcesRef, where("semester", "==", selectedSemester));
 
             unsubscribe = onSnapshot(q, (snapshot) => {
                 const fetchedResources = (snapshot.docs
@@ -87,7 +88,7 @@ function ResourcesContent() {
                         ...doc.data(),
                         date: doc.data().createdAt?.toDate().toLocaleDateString() || "Unknown Date"
                     })) as Resource[])
-                    .filter(res => res.semester === selectedSemester)
+                    .filter(res => res.isDeleted !== true)
                     .filter(res => {
                         if (res.branches && Array.isArray(res.branches)) {
                             return res.branches.includes(selectedBranch!);
