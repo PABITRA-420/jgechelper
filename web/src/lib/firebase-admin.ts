@@ -9,14 +9,27 @@ export const getAdminApp = () => {
     }
 
     try {
-        return admin.initializeApp({
-            credential: admin.credential.cert({
+        let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+        if (privateKey) {
+            privateKey = privateKey.replace(/\\n/g, '\n');
+            if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+                privateKey = privateKey.substring(1, privateKey.length - 1);
+            }
+        }
+
+        const options: admin.AppOptions = {
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        };
+
+        if (process.env.FIREBASE_CLIENT_EMAIL && privateKey) {
+            options.credential = admin.credential.cert({
                 projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
                 clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                // Edge case: Sometimes Vercel env keys get literal '\n' string instead of actual newlines
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            })
-        });
+                privateKey,
+            });
+        }
+
+        return admin.initializeApp(options);
     } catch (error) {
         console.error('Firebase Admin Initialization Error', error);
         throw error;
