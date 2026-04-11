@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 // Initialize the Firebase Admin SDK
 // This only executes safely on the server environment.
 
-const initAdmin = () => {
+export const getAdminApp = () => {
     if (admin.apps.length > 0) {
         return admin.apps[0] as admin.app.App;
     }
@@ -23,7 +23,5 @@ const initAdmin = () => {
     }
 };
 
-const app = initAdmin();
-
-export const adminDb = admin.firestore(app);
-export const adminAuth = admin.auth(app);
+export const getAdminDb = () => admin.firestore(getAdminApp());
+export const getAdminAuth = () => admin.auth(getAdminApp());

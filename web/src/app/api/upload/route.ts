@@ -1,7 +1,7 @@
 // import { put } from '@vercel/blob';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 
 export async function POST(request: Request): Promise<NextResponse> {
     const body = (await request.json()) as HandleUploadBody;
@@ -34,6 +34,9 @@ export async function POST(request: Request): Promise<NextResponse> {
             onBeforeGenerateToken: async (pathname, clientPayload) => {
                 // We use clientPayload to decode the JWT token securely from the frontend
                 try {
+                    const adminAuth = getAdminAuth();
+                    const adminDb = getAdminDb();
+                    
                     const decodedToken = await adminAuth.verifyIdToken(clientPayload || "");
                     const uid = decodedToken.uid;
                     
