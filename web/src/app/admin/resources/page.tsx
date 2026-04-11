@@ -41,32 +41,32 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
     const sortedResources = [...resources]
         .filter(r => viewTrash ? r.isDeleted === true : (r.isDeleted !== true))
         .sort((a, b) => {
-        if (sortBy === "manual") {
-            const orderA = a.orderSequence ?? Number.MAX_SAFE_INTEGER;
-            const orderB = b.orderSequence ?? Number.MAX_SAFE_INTEGER;
-            if (orderA !== orderB) return orderA - orderB;
-            const timeA = a.createdAt?.toMillis() || 0;
-            const timeB = b.createdAt?.toMillis() || 0;
-            return timeB - timeA;
-        }
-        if (sortBy === "newest") {
-            const timeA = a.createdAt?.toMillis() || 0;
-            const timeB = b.createdAt?.toMillis() || 0;
-            return timeB - timeA;
-        }
-        if (sortBy === "oldest") {
-            const timeA = a.createdAt?.toMillis() || 0;
-            const timeB = b.createdAt?.toMillis() || 0;
-            return timeA - timeB;
-        }
-        if (sortBy === "title") {
-            return (a.title || "").localeCompare(b.title || "");
-        }
-        if (sortBy === "subject") {
-            return (a.subject || "").localeCompare(b.subject || "");
-        }
-        return 0;
-    });
+            if (sortBy === "manual") {
+                const orderA = a.orderSequence ?? Number.MAX_SAFE_INTEGER;
+                const orderB = b.orderSequence ?? Number.MAX_SAFE_INTEGER;
+                if (orderA !== orderB) return orderA - orderB;
+                const timeA = a.createdAt?.toMillis() || 0;
+                const timeB = b.createdAt?.toMillis() || 0;
+                return timeB - timeA;
+            }
+            if (sortBy === "newest") {
+                const timeA = a.createdAt?.toMillis() || 0;
+                const timeB = b.createdAt?.toMillis() || 0;
+                return timeB - timeA;
+            }
+            if (sortBy === "oldest") {
+                const timeA = a.createdAt?.toMillis() || 0;
+                const timeB = b.createdAt?.toMillis() || 0;
+                return timeA - timeB;
+            }
+            if (sortBy === "title") {
+                return (a.title || "").localeCompare(b.title || "");
+            }
+            if (sortBy === "subject") {
+                return (a.subject || "").localeCompare(b.subject || "");
+            }
+            return 0;
+        });
 
     const toggleVisibility = async (id: string, currentStatus?: boolean) => {
         try {
@@ -199,59 +199,59 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
                         </div>
 
                         <div className="flex items-center gap-2 self-end sm:self-auto">
-                        <button
-                            onClick={() => onEdit(resource)}
-                            className="rounded p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10"
-                            title="Edit Resource"
-                        >
-                            <Edit2 className="h-4 w-4" />
-                        </button>
-
-                        <a
-                            href={resource.downloadURL}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rounded p-2 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-                            title="View/Download Document"
-                        >
-                            <ExternalLink className="h-4 w-4" />
-                        </a>
-
-                        {!viewTrash && (
                             <button
-                                onClick={() => toggleVisibility(resource.id, resource.visible)}
-                                className={`rounded p-2 text-xs font-bold transition-colors ${resource.visible === false ? 'bg-zinc-200 text-zinc-500' : 'bg-green-100 text-green-600'}`}
-                                title={resource.visible === false ? "Show Resource" : "Hide Resource"}
+                                onClick={() => onEdit(resource)}
+                                className="rounded p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10"
+                                title="Edit Resource"
                             >
-                                {resource.visible === false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                <Edit2 className="h-4 w-4" />
                             </button>
-                        )}
 
-                        {viewTrash ? (
-                            <button
-                                onClick={() => restoreResource(resource.id)}
-                                className="rounded p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10"
-                                title="Restore Resource"
+                            <a
+                                href={resource.downloadURL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded p-2 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                                title="View/Download Document"
                             >
-                                <RotateCcw className="h-4 w-4" />
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => deleteResource(resource.id)}
-                                className="rounded p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"
-                                title="Move to Trash"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </button>
-                        )}
+                                <ExternalLink className="h-4 w-4" />
+                            </a>
+
+                            {!viewTrash && (
+                                <button
+                                    onClick={() => toggleVisibility(resource.id, resource.visible)}
+                                    className={`rounded p-2 text-xs font-bold transition-colors ${resource.visible === false ? 'bg-zinc-200 text-zinc-500' : 'bg-green-100 text-green-600'}`}
+                                    title={resource.visible === false ? "Show Resource" : "Hide Resource"}
+                                >
+                                    {resource.visible === false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                            )}
+
+                            {viewTrash ? (
+                                <button
+                                    onClick={() => restoreResource(resource.id)}
+                                    className="rounded p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10"
+                                    title="Restore Resource"
+                                >
+                                    <RotateCcw className="h-4 w-4" />
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => deleteResource(resource.id)}
+                                    className="rounded p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"
+                                    title="Move to Trash"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
                     </div>
-                </div>
-            ))}
-            {resources.filter(r => viewTrash ? r.isDeleted === true : (r.isDeleted !== true)).length === 0 && (
-                <div className="flex h-32 flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 text-center dark:border-zinc-800">
-                    <p className="text-sm text-muted-foreground">{viewTrash ? "Trash is empty." : "No resources uploaded yet."}</p>
-                </div>
-            )}
+                ))}
+                {resources.filter(r => viewTrash ? r.isDeleted === true : (r.isDeleted !== true)).length === 0 && (
+                    <div className="flex h-32 flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 text-center dark:border-zinc-800">
+                        <p className="text-sm text-muted-foreground">{viewTrash ? "Trash is empty." : "No resources uploaded yet."}</p>
+                    </div>
+                )}
             </div>
         </div>
     )
