@@ -388,7 +388,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                             <p className="text-sm text-zinc-600 dark:text-zinc-300">
                                 <span className="font-semibold text-blue-600 dark:text-blue-400">Click to upload</span> or drag and drop
                             </p>
-                            <p className="text-xs text-zinc-400 mt-1">PDF, DOC, DOCX, JPG, PNG up to 50 MB</p>
+                            <p className="text-xs text-zinc-400 mt-1">PDF, DOC, DOCX, JPG, PNG up to 20 MB</p>
                         </>
                     )}
                 </div>

@@ -36,13 +36,13 @@ export async function POST(request: Request): Promise<NextResponse> {
                 try {
                     const adminAuth = getAdminAuth();
                     const adminDb = getAdminDb();
-                    
+
                     const decodedToken = await adminAuth.verifyIdToken(clientPayload || "");
                     const uid = decodedToken.uid;
-                    
+
                     const userDoc = await adminDb.collection("users").doc(uid).get();
                     const userData = userDoc.data();
-                    
+
                     if (userData?.role !== "admin") {
                         throw new Error("Unauthorized: Not an admin");
                     }
@@ -52,14 +52,16 @@ export async function POST(request: Request): Promise<NextResponse> {
 
                 return {
                     allowedContentTypes: [
-                        'application/pdf', 
-                        'application/msword', 
+                        'application/pdf',
+                        'application/msword',
                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                         'image/jpeg',
                         'image/png',
                         'image/webp'
                     ],
                     tokenPayload: JSON.stringify({}),
+                    // Limit upload size to 15MB to prevent storage quota abuse and protect your Vercel Free tier limits
+                    maximumSizeInBytes: 20 * 1024 * 1024,
                 };
             },
             onUploadCompleted: async ({ blob, tokenPayload }) => {
