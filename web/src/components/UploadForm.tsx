@@ -151,6 +151,32 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
 
                 // Force refresh token to prevent 'Unauthorized' due to token expiration
                 const idToken = user ? await user.getIdToken(true) : '';
+                
+                if (!idToken) {
+                    setError("Security Error: Failed to generate authentication token locally. Please re-login.");
+                    setUploading(false);
+                    return;
+                }
+
+                // --- DIAGNOSTICS: Intercept backend error manually to display it ---
+                try {
+                    const debugRes = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            type: 'blob.generate-client-token',
+                            payload: { pathname: file.name, callbackUrl: window.location.href, clientPayload: idToken }
+                        })
+                    });
+                    if (!debugRes.ok) {
+                        const errData = await debugRes.json().catch(() => null);
+                        setError(`Server Rejected Token: ${errData?.error || debugRes.statusText}`);
+                        setUploading(false);
+                        return;
+                    }
+                } catch (debugErr: any) {
+                    // Only catch network/parsing errors here
+                }
+                // --- END DIAGNOSTICS ---
 
                 const blob = await upload(file.name, file, {
                     access: 'public',
