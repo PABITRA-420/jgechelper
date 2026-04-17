@@ -1,1 +1,4 @@
-[00:00:19.224] Server  LOG     ✓ Ready in 14.8s
+[00:00:07.220] Server  LOG     ✓ Ready in 4.9s
+[00:00:45.572] Server  ERROR   Error uploading to Vercel Blob: Error: Vercel Blob: Invalid event type
+[00:02:29.214] Server  ERROR   Auth check failed in onBeforeGenerateToken: Error: Decoding Firebase ID token failed. Make sure you passed the entire string JWT which represents an ID token. See https://firebase.google.com/docs/auth/admin/verify-id-tokens for details on how to retrieve an ID token.
+[00:02:29.805] Server  ERROR   Error uploading to Vercel Blob: Error: Unauthorized: Decoding Firebase ID token failed. Make sure you passed the entire string JWT which represents an ID token. See https://firebase.google.com/docs/auth/admin/verify-id-tokens for details on how to retrieve an ID token.
