@@ -151,7 +151,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
 
                 // Force refresh token to prevent 'Unauthorized' due to token expiration
                 const idToken = user ? await user.getIdToken(true) : '';
-                
+
                 if (!idToken) {
                     setError("Security Error: Failed to generate authentication token locally. Please re-login.");
                     setUploading(false);
