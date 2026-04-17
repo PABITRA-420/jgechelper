@@ -149,7 +149,8 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                 // 1. Upload File DIRECTLY to Vercel Blob (Client Upload)
                 setUploadProgress(0);
 
-                const idToken = user ? await user.getIdToken() : '';
+                // Force refresh token to prevent 'Unauthorized' due to token expiration
+                const idToken = user ? await user.getIdToken(true) : '';
 
                 const blob = await upload(file.name, file, {
                     access: 'public',

@@ -37,17 +37,27 @@ export async function POST(request: Request): Promise<NextResponse> {
                     const adminAuth = getAdminAuth();
                     const adminDb = getAdminDb();
 
-                    const decodedToken = await adminAuth.verifyIdToken(clientPayload || "");
+                    if (!clientPayload) {
+                        throw new Error("clientPayload (Auth Token) is missing or empty.");
+                    }
+
+                    const decodedToken = await adminAuth.verifyIdToken(clientPayload);
                     const uid = decodedToken.uid;
 
                     const userDoc = await adminDb.collection("users").doc(uid).get();
                     const userData = userDoc.data();
 
-                    if (userData?.role !== "admin") {
-                        throw new Error("Unauthorized: Not an admin");
+                    if (!userData) {
+                        throw new Error("User document not found in Firestore.");
                     }
-                } catch (err) {
-                    throw new Error("Unauthorized");
+
+                    if (userData.role !== "admin") {
+                        throw new Error(`Unauthorized: user role is '${userData.role}'`);
+                    }
+                } catch (err: any) {
+                    console.error("Auth check failed in onBeforeGenerateToken:", err);
+                    // Append actual error message so it propagates to frontend & logs
+                    throw new Error(`Unauthorized: ${err.message}`);
                 }
 
                 return {
