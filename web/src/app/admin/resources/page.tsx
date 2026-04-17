@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { collection, query, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Eye, EyeOff, Trash2, FileText, ExternalLink, Edit2, ArrowUp, ArrowDown, RotateCcw, Archive } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 type ResourceType = {
     id: string;
@@ -22,6 +23,7 @@ type ResourceType = {
 };
 
 function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) {
+    const { user } = useAuth();
     const [resources, setResources] = useState<ResourceType[]>([]);
     const [loading, setLoading] = useState(true);
     const [sortBy, setSortBy] = useState<"newest" | "oldest" | "title" | "subject" | "manual">("newest");
@@ -94,6 +96,39 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
         } catch (err) {
             console.error("Error restoring resource:", err);
             alert("Failed to restore resource");
+        }
+    }
+
+    const hardDeleteResource = async (id: string, downloadURL?: string) => {
+        if (!confirm("⚠️ PERMANENT DELETE\n\nThis will permanently delete this resource from the database AND Vercel storage. This action CANNOT be undone. Are you sure?")) {
+            return;
+        }
+        
+        try {
+            const idToken = user ? await user.getIdToken(true) : '';
+            if (!idToken) {
+                alert("Security error: Could not retrieve fresh token. Please refresh the page.");
+                return;
+            }
+
+            const response = await fetch('/api/upload', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id,
+                    url: downloadURL,
+                    clientPayload: idToken
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to permanently delete resource");
+            }
+            // Real-time listener will auto-remove the row from the UI
+        } catch (err: any) {
+            console.error("Error permanently deleting resource:", err);
+            alert(`Delete failed: ${err.message}`);
         }
     }
 
@@ -228,13 +263,22 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
                             )}
 
                             {viewTrash ? (
-                                <button
-                                    onClick={() => restoreResource(resource.id)}
-                                    className="rounded p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10"
-                                    title="Restore Resource"
-                                >
-                                    <RotateCcw className="h-4 w-4" />
-                                </button>
+                                <>
+                                    <button
+                                        onClick={() => restoreResource(resource.id)}
+                                        className="rounded p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10"
+                                        title="Restore Resource"
+                                    >
+                                        <RotateCcw className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => hardDeleteResource(resource.id, resource.downloadURL)}
+                                        className="rounded p-2 text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40"
+                                        title="Permanently Delete (Cannot be undone)"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </>
                             ) : (
                                 <button
                                     onClick={() => deleteResource(resource.id)}

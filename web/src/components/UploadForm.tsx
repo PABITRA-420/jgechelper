@@ -189,41 +189,6 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                     },
                 });
 
-                /* OLD SERVER UPLOAD LOGIC
-                const blob = await new Promise<any>((resolve, reject) => {
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('POST', `/api/upload?filename=${encodeURIComponent(file.name)}`);
-                    xhr.setRequestHeader('x-upload-secret', process.env.NEXT_PUBLIC_UPLOAD_SECRET || '');
-
-                    xhr.upload.onprogress = (event) => {
-                        if (event.lengthComputable) {
-                            const percentComplete = Math.round((event.loaded / event.total) * 100);
-                            setUploadProgress(percentComplete);
-                        }
-                    };
-
-                    xhr.onload = () => {
-                        if (xhr.status >= 200 && xhr.status < 300) {
-                            try {
-                                resolve(JSON.parse(xhr.responseText));
-                            } catch (e) {
-                                reject(new Error("Invalid response from server"));
-                            }
-                        } else {
-                            try {
-                                const errorData = JSON.parse(xhr.responseText);
-                                reject(new Error(errorData.error || "Failed to upload file"));
-                            } catch (e) {
-                                reject(new Error(`Failed to upload file: ${xhr.statusText}`));
-                            }
-                        }
-                    };
-
-                    xhr.onerror = () => reject(new Error("Network error during upload"));
-                    xhr.send(file);
-                });
-                */
-
                 currentDownloadURL = blob.url;
                 currentFileName = file.name;
             }

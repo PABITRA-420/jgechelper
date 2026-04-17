@@ -1,31 +1,10 @@
-// import { put } from '@vercel/blob';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
+import { del } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 
 export async function POST(request: Request): Promise<NextResponse> {
     const body = (await request.json()) as HandleUploadBody;
-
-    /* OLD SERVER UPLOAD LOGIC
-    const { searchParams } = new URL(request.url);
-    const filename = searchParams.get('filename');
-
-    if (!filename) {
-        return NextResponse.json(
-            { error: 'Filename is required' },
-            { status: 400 }
-        );
-    }
-
-    // Basic security check: Require a secret token to prevent unauthorized uploads
-    const authHeader = request.headers.get('x-upload-secret');
-    if (authHeader !== process.env.ADMIN_UPLOAD_SECRET) {
-        return NextResponse.json(
-            { error: 'Unauthorized: Invalid upload secret' },
-            { status: 401 }
-        );
-    }
-    */
 
     try {
         const jsonResponse = await handleUpload({
@@ -94,5 +73,38 @@ export async function POST(request: Request): Promise<NextResponse> {
             { error: (error as Error).message },
             { status: 400 } // Changed status from 500 to 400
         );
+    }
+}
+
+export async function DELETE(request: Request): Promise<NextResponse> {
+    try {
+        const body = await request.json();
+        const { url, id, clientPayload } = body;
+
+        if (!clientPayload) throw new Error("Missing auth token");
+
+        const adminAuth = getAdminAuth();
+        const adminDb = getAdminDb();
+
+        const decodedToken = await adminAuth.verifyIdToken(clientPayload);
+        const userDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
+        if (userDoc.data()?.role !== "admin") {
+            throw new Error("Unauthorized");
+        }
+
+        // Delete the physical file from Vercel Serverless storage
+        if (url) {
+            await del(url);
+        }
+
+        // Wipe the Firestore document entirely
+        if (id) {
+            await adminDb.collection("resources").doc(id).delete();
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Error during hard delete:', error);
+        return NextResponse.json({ error: (error as Error).message }, { status: 400 });
     }
 }
