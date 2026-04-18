@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import { Inter } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import MaintenanceWrapper from "@/components/MaintenanceWrapper";
 import NetworkMonitor from "@/components/NetworkMonitor";
+import { OnboardingWrapper } from "@/components/OnboardingModal";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
-const outfit = Outfit({
-  variable: "--font-outfit",
+import { Toaster } from "sonner";
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -45,11 +48,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${outfit.variable} antialiased selection:bg-primary selection:text-primary-foreground`}>
+      <body className={`${inter.variable} ${GeistSans.variable} antialiased selection:bg-primary selection:text-primary-foreground`}>
         <AuthProvider>
           <NetworkMonitor />
           <MaintenanceWrapper>
-            {children}
+            <OnboardingWrapper>
+              {children}
+            </OnboardingWrapper>
+            <Toaster position="bottom-right" richColors theme="system" />
           </MaintenanceWrapper>
         </AuthProvider>
         <SpeedInsights />

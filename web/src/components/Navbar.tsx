@@ -1,13 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Menu, LogOut, LayoutDashboard, User, X, Mail } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
     const { user, role, loading, logout } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const pathname = usePathname();
+    const [hoveredPath, setHoveredPath] = useState(pathname);
+
+    useEffect(() => {
+        setHoveredPath(pathname);
+    }, [pathname]);
+
+    const navItems = [
+        { name: "Resources", path: "/resources" },
+        { name: "Notices", path: "/notices" },
+        { name: "About", path: "/about" },
+    ];
 
     // Prevent background scrolling when mobile menu is open
     useEffect(() => {
@@ -23,23 +37,40 @@ export function Navbar() {
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center p-4">
-            <nav className="glass flex w-full max-w-5xl items-center justify-between rounded-2xl px-6 py-3 shadow-lg">
+            <motion.nav 
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="flex w-full max-w-5xl items-center justify-between rounded-full border border-black/5 bg-white/60 px-6 py-2.5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl dark:border-white/10 dark:bg-black/60 dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+            >
                 {/* Logo */}
-                <Link href="/" className="text-xl font-bold tracking-tight text-foreground">
-                    JGEC<span className="text-gray-500">Helper</span>
+                <Link href="/" className="font-heading text-xl font-bold tracking-tight text-foreground">
+                    JGEC<span className="bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent dark:from-blue-400 dark:to-indigo-400">Helper</span>
                 </Link>
 
                 {/* Desktop Links */}
-                <div className="hidden items-center gap-8 md:flex">
-                    <Link href="/resources" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                        Resources
-                    </Link>
-                    <Link href="/notices" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                        Notices
-                    </Link>
-                    <Link href="/about" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                        About
-                    </Link>
+                <div className="hidden items-center md:flex rounded-full border border-zinc-200/50 bg-white/50 p-1 dark:border-zinc-800/50 dark:bg-zinc-950/50">
+                    {navItems.map((item) => {
+                        const isActive = item.path === pathname;
+                        const isHovered = item.path === hoveredPath;
+                        return (
+                            <Link 
+                                key={item.path} 
+                                href={item.path}
+                                onMouseEnter={() => setHoveredPath(item.path)}
+                                onMouseLeave={() => setHoveredPath(pathname)}
+                                className={`relative px-4 py-1.5 text-sm font-medium transition-colors ${isActive || isHovered ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300'}`}
+                            >
+                                {isHovered && (
+                                    <motion.div
+                                        layoutId="navbar-pill"
+                                        className="absolute inset-0 z-0 rounded-full bg-zinc-200/50 dark:bg-zinc-800/50"
+                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                    />
+                                )}
+                                <span className="relative z-10">{item.name}</span>
+                            </Link>
+                        )
+                    })}
                 </div>
 
                 {/* Actions */}
@@ -126,13 +157,13 @@ export function Navbar() {
 
                     {/* Mobile Menu Toggle */}
                     <button
-                        className="md:hidden"
+                        className="md:hidden rounded-full p-2 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     >
-                        {isMobileMenuOpen ? <X className="h-6 w-6 text-foreground" /> : <Menu className="h-6 w-6 text-foreground" />}
+                        {isMobileMenuOpen ? <X className="h-5 w-5 text-foreground" /> : <Menu className="h-5 w-5 text-foreground" />}
                     </button>
                 </div>
-            </nav>
+            </motion.nav>
 
             {/* Mobile Menu Overlay */}
             {isMobileMenuOpen && (

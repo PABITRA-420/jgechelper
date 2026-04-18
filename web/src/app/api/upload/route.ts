@@ -33,10 +33,11 @@ export async function POST(request: Request): Promise<NextResponse> {
                     if (userData.role !== "admin") {
                         throw new Error(`Unauthorized: user role is '${userData.role}'`);
                     }
-                } catch (err: any) {
+                } catch (err: unknown) {
                     console.error("Auth check failed in onBeforeGenerateToken:", err);
+                    const errorMessage = err instanceof Error ? err.message : "Unknown auth error";
                     // Append actual error message so it propagates to frontend & logs
-                    throw new Error(`Unauthorized: ${err.message}`);
+                    throw new Error(`Unauthorized: ${errorMessage}`);
                 }
 
                 return {
@@ -67,11 +68,12 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         return NextResponse.json(blob);
         */
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error uploading to Vercel Blob:', error);
-        const status = error.message && error.message.includes('Unauthorized') ? 401 : 400;
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const status = errorMessage.includes('Unauthorized') ? 401 : 400;
         return NextResponse.json(
-            { error: error.message },
+            { error: errorMessage },
             { status } 
         );
     }
@@ -104,9 +106,10 @@ export async function DELETE(request: Request): Promise<NextResponse> {
         }
 
         return NextResponse.json({ success: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error during hard delete:', error);
-        const status = error.message && error.message.includes('Unauthorized') ? 401 : 400;
-        return NextResponse.json({ error: error.message }, { status });
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const status = errorMessage.includes('Unauthorized') ? 401 : 400;
+        return NextResponse.json({ error: errorMessage }, { status });
     }
 }

@@ -1,5 +1,5 @@
 import { FileText, Download, Eye, Loader2, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 interface ResourceProps {
     title: string;
@@ -15,6 +15,18 @@ interface ResourceProps {
 export function ResourceCard({ resource }: { resource: ResourceProps }) {
     const [downloading, setDownloading] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+
+    // Spotlight logic
+    const divRef = useRef<HTMLDivElement>(null);
+    const [isFocused, setIsFocused] = useState(false);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [opacity, setOpacity] = useState(0);
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!divRef.current || isFocused) return;
+        const rect = divRef.current.getBoundingClientRect();
+        setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    };
 
     const handleDownload = async () => {
         if (!resource.downloadURL) return;
@@ -74,8 +86,23 @@ export function ResourceCard({ resource }: { resource: ResourceProps }) {
 
     return (
         <>
-        <div className={`glass group relative overflow-hidden rounded-xl p-5 transition-all dark:bg-zinc-900/50 ${showPreview ? '' : 'hover:-translate-y-1 hover:shadow-xl'}`}>
-            <div className="flex items-start justify-between">
+        <div 
+            ref={divRef}
+            onMouseMove={handleMouseMove}
+            onFocus={() => { setIsFocused(true); setOpacity(1); }}
+            onBlur={() => { setIsFocused(false); setOpacity(0); }}
+            onMouseEnter={() => setOpacity(1)}
+            onMouseLeave={() => setOpacity(0)}
+            className={`glass group relative overflow-hidden rounded-xl p-5 transition-all dark:bg-zinc-900/50 ${showPreview ? '' : 'hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-blue-900/10'}`}
+        >
+            <div
+                className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 z-0"
+                style={{
+                    opacity,
+                    background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(59, 130, 246, 0.15), transparent 40%)`,
+                }}
+            />
+            <div className="relative z-10 flex items-start justify-between">
                 <div className="rounded-lg bg-blue-500/10 p-3 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
                     <FileText className="h-6 w-6" />
                 </div>
@@ -84,19 +111,19 @@ export function ResourceCard({ resource }: { resource: ResourceProps }) {
                 </span>
             </div>
 
-            <div className="mt-4">
+            <div className="relative z-10 mt-4">
                 <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                     <span>{resource.branches ? resource.branches.join(', ') : resource.branch}</span>
                     <span>•</span>
                     <span>{resource.type}</span>
                 </div>
-                <h3 className="line-clamp-2 text-lg font-semibold leading-tight text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                <h3 className="line-clamp-2 text-lg font-semibold leading-tight text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {resource.title}
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">{resource.subject}</p>
             </div>
 
-            <div className="mt-6 flex items-center gap-3">
+            <div className="relative z-10 mt-6 flex items-center gap-3">
                 <button
                     onClick={handleDownload}
                     disabled={downloading || !resource.downloadURL}

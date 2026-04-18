@@ -74,14 +74,15 @@ function ResourcesContent() {
     }, [user, role, authLoading, router]);
 
     useEffect(() => {
-        let unsubscribe: () => void;
+        let unsubscribe: (() => void) | undefined;
 
-        if (view === "resources" && selectedBranch && selectedSemester && role) {
-            setLoading(true);
-            const resourcesRef = collection(db, "resources");
-            const q = query(resourcesRef, where("semester", "==", selectedSemester));
+        const fetchInitialData = async () => {
+            if (view === "resources" && selectedBranch && selectedSemester && role) {
+                setLoading(true);
+                const resourcesRef = collection(db, "resources");
+                const q = query(resourcesRef, where("semester", "==", selectedSemester));
 
-            unsubscribe = onSnapshot(q, (snapshot) => {
+                unsubscribe = onSnapshot(q, (snapshot) => {
                 const fetchedResources = (snapshot.docs
                     .map(doc => ({
                         id: doc.id,
@@ -112,6 +113,9 @@ function ResourcesContent() {
                 setLoading(false);
             });
         }
+        };
+
+        fetchInitialData();
 
         return () => {
             if (unsubscribe) unsubscribe();

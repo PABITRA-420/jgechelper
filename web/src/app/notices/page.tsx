@@ -8,6 +8,7 @@ import { db } from "@/lib/firebase";
 import { BellOff } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Notice {
     id: number; // Keeping number to match interface, but real DB uses string. Handled in map.
@@ -93,11 +94,35 @@ export default function NoticesPage() {
                             ))}
                         </div>
                     ) : notices.length > 0 ? (
-                        notices.map((notice) => (
-                            <NoticeCard key={notice.id} notice={notice} />
-                        ))
+                        <motion.div 
+                            variants={{
+                                hidden: { opacity: 0 },
+                                show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+                            }}
+                            initial="hidden"
+                            animate="show"
+                            className="flex flex-col gap-4"
+                        >
+                            <AnimatePresence>
+                                {notices.map((notice) => (
+                                    <motion.div
+                                        key={notice.id}
+                                        variants={{
+                                            hidden: { opacity: 0, y: 20 },
+                                            show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+                                        }}
+                                    >
+                                        <NoticeCard notice={notice} />
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </motion.div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 py-16 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 py-16 text-center dark:border-zinc-800 dark:bg-zinc-900/50"
+                        >
                             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
                                 <BellOff className="h-8 w-8 text-zinc-400 dark:text-zinc-600" />
                             </div>
@@ -111,7 +136,7 @@ export default function NoticesPage() {
                                     Publish Notice
                                 </button>
                             )}
-                        </div>
+                        </motion.div>
                     )}
                 </div>
             </div>

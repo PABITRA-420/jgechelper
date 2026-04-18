@@ -2,7 +2,7 @@
 
 import { UploadForm } from "@/components/UploadForm";
 import { useState, useEffect } from "react";
-import { collection, query, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Eye, EyeOff, Trash2, FileText, ExternalLink, Edit2, ArrowUp, ArrowDown, RotateCcw, Archive } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -126,9 +126,10 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
                 throw new Error(data.error || "Failed to permanently delete resource");
             }
             // Real-time listener will auto-remove the row from the UI
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Error permanently deleting resource:", err);
-            alert(`Delete failed: ${err.message}`);
+            const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+            alert(`Delete failed: ${errorMessage}`);
         }
     }
 
@@ -180,7 +181,7 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
                     <span className="text-sm text-zinc-500 font-medium whitespace-nowrap">Sort by:</span>
                     <select
                         value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as any)}
+                        onChange={(e) => setSortBy(e.target.value as "newest" | "oldest" | "title" | "subject" | "manual")}
                         className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600"
                         disabled={viewTrash}
                     >

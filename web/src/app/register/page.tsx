@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function RegisterPage() {
-    const { signInWithGoogle, registerWithEmail, user, role } = useAuth();
+    const { signInWithGoogle, registerWithEmail, user, role, loading: authLoading } = useAuth();
     const router = useRouter();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -84,14 +84,19 @@ export default function RegisterPage() {
         }
     };
 
-
     return (
         <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-4">
             {/* Background Elements */}
             <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-zinc-100 via-background to-background dark:from-zinc-900/20"></div>
             <div className="absolute top-1/2 left-1/2 -z-10 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/5 blur-[100px]"></div>
 
-            <div className="glass w-full max-w-md rounded-2xl p-8 shadow-2xl">
+            {authLoading || (user && role) ? (
+                <div className="flex flex-col items-center gap-4">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-200 border-t-foreground dark:border-zinc-800" />
+                    <p className="text-sm text-muted-foreground animate-pulse">Setting up your account...</p>
+                </div>
+            ) : (
+                <div className="glass w-full max-w-md rounded-2xl p-8 shadow-2xl">
                 <div className="mb-6">
                     <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
                         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -216,7 +221,8 @@ export default function RegisterPage() {
                         Sign in
                     </Link>
                 </p>
-            </div>
+                </div>
+            )}
         </main >
     );
 }
