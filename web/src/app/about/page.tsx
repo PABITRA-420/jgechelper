@@ -130,7 +130,7 @@ export default function AboutPage() {
                         <h2 className="text-2xl font-bold tracking-tight">Contact & Feedback</h2>
                     </div>
                     <p className="text-muted-foreground mb-6 leading-relaxed">
-                        Have suggestions, found a bug, or just want to say hi? We'd love to hear from you. Your feedback helps make JGEC Helper better for everyone.
+                        Have suggestions, found a bug, or just want to say hi? We&apos;d love to hear from you. Your feedback helps make JGEC Helper better for everyone.
                     </p>
                     <a
                         href="mailto:admin.jgechelper@gmail.com?subject=Feedback&body=Dear%20Admin%2C%0A%0A"

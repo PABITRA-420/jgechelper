@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, Trash2, Eye, EyeOff, Edit2, Paperclip, X, FileText, UploadCloud } from "lucide-react";
+import { Send, Trash2, Eye, EyeOff, Edit2, X, FileText, UploadCloud } from "lucide-react";
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "sonner";

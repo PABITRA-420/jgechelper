@@ -1,6 +1,6 @@
 "use client";
 
-import { UploadCloud, X, FileText, CheckCircle, AlertCircle, ChevronDown, Check, Loader2 } from "lucide-react";
+import { UploadCloud, X, FileText, ChevronDown, Check, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { collection, addDoc, serverTimestamp, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -166,7 +166,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                         setUploading(false);
                         return;
                     }
-                } catch (debugErr: any) {
+                } catch (debugErr: unknown) {
                     // Only catch network/parsing errors here
                 }
                 // --- END DIAGNOSTICS ---
