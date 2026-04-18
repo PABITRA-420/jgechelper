@@ -15,7 +15,7 @@ import {
     ActionCodeSettings
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, updateDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
 // CONFIG: Admin Allowlist (Only used for FIRST login to assign initial role)
@@ -28,11 +28,13 @@ type UserRole = "admin" | "user" | null;
 interface AuthContextType {
     user: User | null;
     role: UserRole;
+    userBranch: string | null;
     loading: boolean;
     signInWithGoogle: () => Promise<void>;
     signInWithEmail: (email: string, pass: string) => Promise<void>;
     registerWithEmail: (name: string, email: string, pass: string) => Promise<void>;
     resetPassword: (email: string) => Promise<void>;
+    setBranch: (branch: string) => Promise<void>;
     logout: () => Promise<void>;
 }
 
@@ -41,6 +43,7 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [role, setRole] = useState<UserRole>(null);
+    const [userBranch, setUserBranch] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
@@ -84,13 +87,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 await signOut(auth);
                                 setUser(null);
                                 setRole(null);
+                                setUserBranch(null);
                                 setLoading(false);
                                 router.push("/?banned=true");
                                 return;
                             }
 
-                            // Update role instantly across the app
+                            // Update role and branch instantly across the app
                             setRole(userData.role as UserRole);
+                            setUserBranch(userData.branch || null);
 
                             // Note: We avoid updating lastLogin inside onSnapshot to prevent recursive loops
                         } else {
@@ -128,6 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             }
 
                             setRole(initialRole);
+                            setUserBranch(null);
                         }
 
                         // Unlock UI
@@ -135,6 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     }, (error) => {
                         console.error("Error with user snapshot:", error);
                         setRole(null);
+                        setUserBranch(null);
                         setLoading(false);
                     });
 
@@ -144,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 } catch (error) {
                     console.error("Error setting up user listener:", error);
                     setRole(null); // Fallback to no role on error
+                    setUserBranch(null);
                     setLoading(false);
                 }
 
@@ -151,6 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // User logged out
                 setUser(null);
                 setRole(null);
+                setUserBranch(null);
                 setLoading(false);
             }
         });
@@ -232,8 +241,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const setBranch = async (branch: string) => {
+        if (!user) return;
+        try {
+            const userRef = doc(db, "users", user.uid);
+            await updateDoc(userRef, { branch });
+            // Local state is updated via the onSnapshot listener immediately
+        } catch (error) {
+            console.error("Error setting branch", error);
+            throw error;
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, role, loading, signInWithGoogle, signInWithEmail, registerWithEmail, resetPassword, logout }}>
+        <AuthContext.Provider value={{ user, role, userBranch, loading, signInWithGoogle, signInWithEmail, registerWithEmail, resetPassword, setBranch, logout }}>
             {children}
         </AuthContext.Provider>
     );

@@ -6,6 +6,7 @@ import { collection, addDoc, serverTimestamp, doc, updateDoc } from "firebase/fi
 import { db } from "@/lib/firebase";
 import { upload } from '@vercel/blob/client';
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 export type UploadFormResource = {
     id: string;
@@ -25,8 +26,6 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
     const [existingAttachment, setExistingAttachment] = useState<{ url: string | null, name: string | null }>({ url: null, name: null });
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [success, setSuccess] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     const { user } = useAuth();
 
@@ -72,8 +71,6 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                 name: (editingResource.fileName as string) || null
             });
             setFile(null);
-            setSuccess(false);
-            setError(null);
             setUploadProgress(0);
         } else {
             resetForm();
@@ -88,8 +85,6 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
         setType("Question Paper");
         setFile(null);
         setExistingAttachment({ url: null, name: null });
-        setSuccess(false);
-        setError(null);
         setUploadProgress(0);
     };
 
@@ -131,11 +126,9 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
 
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError(null);
-        setSuccess(false);
 
         if ((!file && !existingAttachment.url) || !title || !subject || branches.length === 0) {
-            setError("Please fill in all fields (select at least one branch) and provide a file.");
+            toast.error("Please fill in all fields (select at least one branch) and provide a file.");
             return;
         }
 
@@ -153,7 +146,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                 const idToken = user ? await user.getIdToken(true) : '';
 
                 if (!idToken) {
-                    setError("Security Error: Failed to generate authentication token locally. Please re-login.");
+                    toast.error("Security Error: Failed to generate authentication token locally. Please re-login.");
                     setUploading(false);
                     return;
                 }
@@ -169,7 +162,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                     });
                     if (!debugRes.ok) {
                         const errData = await debugRes.json().catch(() => null);
-                        setError(`Server Rejected Token: ${errData?.error || debugRes.statusText}`);
+                        toast.error(`Server Rejected Token: ${errData?.error || debugRes.statusText}`);
                         setUploading(false);
                         return;
                     }
@@ -206,7 +199,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                     fileName: currentFileName,
                 });
 
-                setSuccess(true);
+                toast.success("Resource updated successfully!");
                 if (onClearEdit) onClearEdit();
             } else {
                 // 2. Save Metadata to Firestore
@@ -222,12 +215,12 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                     createdAt: serverTimestamp(),
                 });
 
-                setSuccess(true);
+                toast.success("Resource uploaded successfully!");
                 resetForm();
             }
         } catch (err) {
             console.error("Upload failed", err);
-            setError(`Failed to ${editingResource ? 'update' : 'upload'} resource. Please try again.`);
+            toast.error(`Failed to ${editingResource ? 'update' : 'upload'} resource. Please try again.`);
         } finally {
             setUploading(false);
         }
@@ -399,20 +392,6 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                                 style={{ width: `${uploadProgress}%` }}
                             />
                         </div>
-                    </div>
-                )}
-
-                {error && (
-                    <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/10 dark:text-red-400">
-                        <AlertCircle className="h-4 w-4 shrink-0" />
-                        <span>{error}</span>
-                    </div>
-                )}
-
-                {success && (
-                    <div className="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-600 dark:bg-green-900/10 dark:text-green-400">
-                        <CheckCircle className="h-4 w-4 shrink-0" />
-                        <span>{editingResource ? "Resource updated successfully!" : "Resource uploaded successfully!"}</span>
                     </div>
                 )}
 

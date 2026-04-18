@@ -1,5 +1,5 @@
 import { Calendar, AlertCircle, Paperclip, ExternalLink } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface NoticeProps {
     id: number | string;
@@ -15,6 +15,18 @@ interface NoticeProps {
 export function NoticeCard({ notice }: { notice: NoticeProps }) {
     const isUrgent = notice.category === "Urgent";
     const [isNew, setIsNew] = useState(false);
+
+    // Spotlight logic
+    const divRef = useRef<HTMLDivElement>(null);
+    const [isFocused, setIsFocused] = useState(false);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [opacity, setOpacity] = useState(0);
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!divRef.current || isFocused) return;
+        const rect = divRef.current.getBoundingClientRect();
+        setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    };
 
     useEffect(() => {
         const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
@@ -32,8 +44,23 @@ export function NoticeCard({ notice }: { notice: NoticeProps }) {
     }, [notice]);
 
     return (
-        <div className={`glass relative overflow-hidden rounded-xl border p-6 transition-all hover:bg-secondary/50 ${isUrgent ? "border-red-500/50 bg-red-500/5" : "border-border"}`}>
-            <div className="flex items-start justify-between gap-4">
+        <div 
+            ref={divRef}
+            onMouseMove={handleMouseMove}
+            onFocus={() => { setIsFocused(true); setOpacity(1); }}
+            onBlur={() => { setIsFocused(false); setOpacity(0); }}
+            onMouseEnter={() => setOpacity(1)}
+            onMouseLeave={() => setOpacity(0)}
+            className={`glass relative overflow-hidden rounded-xl border p-6 transition-all hover:bg-secondary/50 dark:hover:bg-zinc-900/80 hover:-translate-y-1 hover:shadow-xl ${isUrgent ? "border-red-500/50 bg-red-500/5 dark:hover:shadow-red-900/10" : "border-border dark:hover:shadow-white/5"}`}
+        >
+            <div
+                className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 z-0"
+                style={{
+                    opacity,
+                    background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(${isUrgent ? '239, 68, 68' : '59, 130, 246'}, 0.15), transparent 40%)`,
+                }}
+            />
+            <div className="relative z-10 flex items-start justify-between gap-4">
                 <div className="flex-1">
                     <div className="mb-2 flex items-center gap-2">
                         <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${isUrgent

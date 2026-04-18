@@ -1,21 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Send, Trash2, Eye, EyeOff, Edit2, Paperclip, X, FileText } from "lucide-react";
+import { Send, Trash2, Eye, EyeOff, Edit2, Paperclip, X, FileText, UploadCloud } from "lucide-react";
 import { collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { toast } from "sonner";
 
-// Optional: Define a Notice type
-// interface Notice {
-//     id: string;
-//     title: string;
-//     category: string;
-//     description: string;
-//     visible?: boolean;
-//     attachmentUrl?: string | null;
-//     attachmentName?: string | null;
-//     createdAt?: any;
-// }
 
 type EditNoticeType = {
     id: string;
@@ -37,6 +27,7 @@ function NoticeForm({ editingNotice, onClearEdit }: { editingNotice: EditNoticeT
     const [file, setFile] = useState<File | null>(null);
     const [existingAttachment, setExistingAttachment] = useState<{ url: string | null, name: string | null }>({ url: null, name: null });
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [dragActive, setDragActive] = useState(false);
 
     useEffect(() => {
         if (editingNotice) {
@@ -58,6 +49,26 @@ function NoticeForm({ editingNotice, onClearEdit }: { editingNotice: EditNoticeT
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
             setExistingAttachment({ url: null, name: null }); // Clear existing if new is selected
+        }
+    };
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            setFile(e.dataTransfer.files[0]);
+            setExistingAttachment({ url: null, name: null });
         }
     };
 
@@ -100,6 +111,7 @@ function NoticeForm({ editingNotice, onClearEdit }: { editingNotice: EditNoticeT
                     attachmentName: attachmentName,
                     // DO NOT update createdAt so new tag logic remains accurate
                 });
+                toast.success("Notice updated successfully!");
                 onClearEdit();
             } else {
                 // Create new notice
@@ -119,10 +131,11 @@ function NoticeForm({ editingNotice, onClearEdit }: { editingNotice: EditNoticeT
                 setFile(null);
                 setExistingAttachment({ url: null, name: null });
                 if (fileInputRef.current) fileInputRef.current.value = "";
+                toast.success("Notice posted successfully!");
             }
         } catch (err) {
             console.error("Upload failed", err);
-            alert("Failed to save notice");
+            toast.error("Failed to save notice. Please try again.");
         } finally {
             setPosting(false);
         }
@@ -162,10 +175,20 @@ function NoticeForm({ editingNotice, onClearEdit }: { editingNotice: EditNoticeT
                 {!file && !existingAttachment.url ? (
                     <div
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-zinc-300 p-4 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                        onDragEnter={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDragOver={handleDrag}
+                        onDrop={handleDrop}
+                        className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 transition-all duration-200 ease-in-out ${dragActive
+                            ? "border-blue-500 bg-blue-50/80 scale-[1.01] shadow-sm dark:border-blue-500 dark:bg-blue-500/10"
+                            : "border-zinc-300 bg-zinc-50/50 hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/50 dark:hover:bg-zinc-800/80"
+                            }`}
                     >
-                        <Paperclip className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Click to attach file</span>
+                        <div className="rounded-full bg-zinc-100 p-2 shadow-sm dark:bg-zinc-800/80">
+                            <UploadCloud className={`h-5 w-5 ${dragActive ? "text-blue-500" : "text-zinc-500 dark:text-zinc-400"}`} />
+                        </div>
+                        <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">Click to attach file</span>
+                        <span className="text-xs text-muted-foreground">or drag and drop</span>
                         <input
                             ref={fileInputRef}
                             type="file"
