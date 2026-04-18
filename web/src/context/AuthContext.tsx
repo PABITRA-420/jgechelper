@@ -97,7 +97,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             setRole(userData.role as UserRole);
                             setUserBranch(userData.branch || null);
 
-                            // Note: We avoid updating lastLogin inside onSnapshot to prevent recursive loops
+                            // Update last login time independently
+                            await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
                         } else {
                             // NEW USER LOGIC: Only runs once when document isn't found
                             const isAdmin = currentUser.email && ADMIN_EMAILS.includes(currentUser.email);
@@ -144,9 +145,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         setUserBranch(null);
                         setLoading(false);
                     });
-
-                    // Update last login time independently so as not to spam snapshot
-                    await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
 
                 } catch (error) {
                     console.error("Error setting up user listener:", error);

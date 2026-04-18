@@ -15,6 +15,7 @@ type CustomUser = {
     role: "admin" | "user";
     status?: "active" | "banned";
     createdAt: { seconds: number; nanoseconds: number } | null;
+    branch?: string;
 };
 
 export default function AdminUsersPage() {
@@ -150,6 +151,7 @@ export default function AdminUsersPage() {
                         <thead className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/50">
                             <tr>
                                 <th className="px-6 py-4 font-medium">User</th>
+                                <th className="px-6 py-4 font-medium">Branch</th>
                                 <th className="px-6 py-4 font-medium">Contact</th>
                                 <th className="px-6 py-4 font-medium">Joined</th>
                                 <th className="px-6 py-4 font-medium">Status / Role</th>
@@ -166,6 +168,7 @@ export default function AdminUsersPage() {
                                                 <div className="h-4 w-24 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
                                             </div>
                                         </td>
+                                        <td className="px-6 py-4"><div className="h-4 w-12 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" /></td>
                                         <td className="px-6 py-4"><div className="h-4 w-32 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" /></td>
                                         <td className="px-6 py-4"><div className="h-4 w-24 animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" /></td>
                                         <td className="px-6 py-4"><div className="h-6 w-16 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-800" /></td>
@@ -174,7 +177,7 @@ export default function AdminUsersPage() {
                                 ))
                             ) : filteredUsers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                                    <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
                                         {users.length === 0 ? "No users found." : "No users match your search."}
                                     </td>
                                 </tr>
@@ -195,7 +198,8 @@ export default function AdminUsersPage() {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
                                                 {user.photoURL ? (
-                                                    <img src={user.photoURL} alt={user.displayName} className="h-10 w-10 rounded-full border border-zinc-200 object-cover dark:border-zinc-700" />
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img src={user.photoURL} alt={user.displayName || "User profile"} className="h-10 w-10 rounded-full border border-zinc-200 object-cover dark:border-zinc-700" />
                                                 ) : (
                                                     <div className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
                                                         <UserIcon className="h-5 w-5 text-muted-foreground" />
@@ -206,6 +210,15 @@ export default function AdminUsersPage() {
                                                     <span className="text-xs text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity">ID: {user.id}</span>
                                                 </div>
                                             </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {user.branch ? (
+                                                <span className="inline-flex items-center rounded-md bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400">
+                                                    {user.branch}
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs text-zinc-400 italic">Not set</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-muted-foreground">{user.email}</td>
                                         <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400">

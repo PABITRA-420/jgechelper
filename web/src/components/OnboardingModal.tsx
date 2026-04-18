@@ -9,7 +9,7 @@ import { toast } from "sonner";
 const BRANCHES = ["CSE", "IT", "ECE", "EE", "ME", "CE"];
 
 export function OnboardingWrapper({ children }: { children: React.ReactNode }) {
-    const { user, userBranch, loading, setBranch } = useAuth();
+    const { user, role, userBranch, loading, setBranch } = useAuth();
     const [submittingBranch, setSubmittingBranch] = useState<string | null>(null);
 
     // If still evaluating auth state, render nothing to avoid flash
@@ -17,8 +17,8 @@ export function OnboardingWrapper({ children }: { children: React.ReactNode }) {
         return null;
     }
 
-    // Security Gate: If completely unauthenticated, or they already have a branch, render the app normally
-    if (!user || userBranch) {
+    // Security Gate: If completely unauthenticated, unverified (no role), or they already have a branch, render the app normally
+    if (!user || !role || userBranch) {
         return <>{children}</>;
     }
 
