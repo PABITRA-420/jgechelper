@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         let snapshotUnsubscribe: (() => void) | null = null;
+        let lastLoginUpdated = false;
 
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setLoading(true);
@@ -97,8 +98,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             setRole(userData.role as UserRole);
                             setUserBranch(userData.branch || null);
 
-                            // Update last login time independently
-                            await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
+                            // Update last login time once per session
+                            if (!lastLoginUpdated) {
+                                lastLoginUpdated = true;
+                                await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
+                            }
                         } else {
                             // NEW USER LOGIC: Only runs once when document isn't found
                             const isAdmin = currentUser.email && ADMIN_EMAILS.includes(currentUser.email);

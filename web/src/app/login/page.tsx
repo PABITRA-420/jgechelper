@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-    const { signInWithGoogle, signInWithEmail, resetPassword, user, role, logout } = useAuth();
+    const { signInWithGoogle, signInWithEmail, resetPassword, user, role, logout, loading: authLoading } = useAuth();
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -95,6 +95,20 @@ export default function LoginPage() {
         } finally {
             setLoading(false);
         }
+    }
+
+    if (authLoading || user) {
+        return (
+            <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-4">
+                {/* Background Elements */}
+                <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-100 via-background to-background dark:from-zinc-900/20"></div>
+                <div className="absolute top-1/2 left-1/2 -z-10 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/5 blur-[100px]"></div>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-200 border-t-foreground dark:border-zinc-800" />
+                    <p className="text-sm text-muted-foreground animate-pulse">Checking credentials...</p>
+                </div>
+            </main>
+        );
     }
 
     return (
