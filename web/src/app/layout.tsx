@@ -47,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body className={`${inter.variable} ${GeistSans.variable} antialiased selection:bg-primary selection:text-primary-foreground`}>
         <AuthProvider>
           <NetworkMonitor />
@@ -55,7 +55,7 @@ export default function RootLayout({
             <OnboardingWrapper>
               {children}
             </OnboardingWrapper>
-            <Toaster position="bottom-right" richColors theme="system" />
+            <Toaster position="bottom-right" richColors theme="dark" />
           </MaintenanceWrapper>
         </AuthProvider>
         <SpeedInsights />
