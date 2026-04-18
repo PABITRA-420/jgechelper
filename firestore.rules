@@ -1,15 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // ==== OLD LOGIC (Commented out for reference) ====
-    // function isAdmin() {
-    //   return request.auth != null && 
-    //          request.auth.token.email == "sarkarpabitra1510@gmail.com" &&
-    //          request.auth.token.email_verified == true;
-    // }
-
-    // ==== NEW LOGIC ====
+ 
     // Helper function to check if user is the root admin OR a promoted admin
     // This allows users marked as "admin" in the Firestore users collection to actually manage content
     function isAdmin() {
@@ -65,7 +57,10 @@ service cloud.firestore {
     
     match /users/{userId} {
       // Users can manage their own profile
-      allow read, create: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId 
+                    && (request.resource.data.role == "user" || 
+                       (request.resource.data.role == "admin" && request.auth.token.email == "sarkarpabitra1510@gmail.com"));
       // Prevent users from changing their own role or sensitive fields
       allow update: if request.auth != null && request.auth.uid == userId 
                     && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'email', 'uid']));

@@ -106,11 +106,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 lastLogin: serverTimestamp(),
                             };
 
-                            const tempName = localStorage.getItem("tempDisplayName");
+                            const tempName = typeof window !== 'undefined' ? localStorage.getItem("tempDisplayName") : null;
                             if (currentUser.displayName) {
                                 newUserData.displayName = currentUser.displayName;
                             } else if (tempName) {
                                 newUserData.displayName = tempName;
+                            } else if (currentUser.email) {
+                                newUserData.displayName = currentUser.email.split('@')[0];
+                            } else {
+                                newUserData.displayName = "User";
                             }
 
                             if (currentUser.photoURL) newUserData.photoURL = currentUser.photoURL;

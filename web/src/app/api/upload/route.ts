@@ -67,11 +67,12 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         return NextResponse.json(blob);
         */
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error uploading to Vercel Blob:', error);
+        const status = error.message && error.message.includes('Unauthorized') ? 401 : 400;
         return NextResponse.json(
-            { error: (error as Error).message },
-            { status: 400 } // Changed status from 500 to 400
+            { error: error.message },
+            { status } 
         );
     }
 }
@@ -103,8 +104,9 @@ export async function DELETE(request: Request): Promise<NextResponse> {
         }
 
         return NextResponse.json({ success: true });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error during hard delete:', error);
-        return NextResponse.json({ error: (error as Error).message }, { status: 400 });
+        const status = error.message && error.message.includes('Unauthorized') ? 401 : 400;
+        return NextResponse.json({ error: error.message }, { status });
     }
 }
