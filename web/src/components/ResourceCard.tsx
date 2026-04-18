@@ -1,4 +1,4 @@
-import { FileText, Download, Eye, Loader2 } from "lucide-react";
+import { FileText, Download, Eye, Loader2, X } from "lucide-react";
 import { useState } from "react";
 
 interface ResourceProps {
@@ -14,6 +14,7 @@ interface ResourceProps {
 
 export function ResourceCard({ resource }: { resource: ResourceProps }) {
     const [downloading, setDownloading] = useState(false);
+    const [showPreview, setShowPreview] = useState(false);
 
     const handleDownload = async () => {
         if (!resource.downloadURL) return;
@@ -72,7 +73,8 @@ export function ResourceCard({ resource }: { resource: ResourceProps }) {
     };
 
     return (
-        <div className="glass group relative overflow-hidden rounded-xl p-5 transition-all hover:-translate-y-1 hover:shadow-xl dark:bg-zinc-900/50">
+        <>
+        <div className={`glass group relative overflow-hidden rounded-xl p-5 transition-all dark:bg-zinc-900/50 ${showPreview ? '' : 'hover:-translate-y-1 hover:shadow-xl'}`}>
             <div className="flex items-start justify-between">
                 <div className="rounded-lg bg-blue-500/10 p-3 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400">
                     <FileText className="h-6 w-6" />
@@ -103,16 +105,54 @@ export function ResourceCard({ resource }: { resource: ResourceProps }) {
                     {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                     {downloading ? "Downloading..." : "Download"}
                 </button>
-                <a
-                    href={resource.downloadURL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center rounded-lg border border-input bg-background/50 p-2 text-foreground transition-colors hover:bg-secondary"
-                    title="View Resource"
+                <button
+                    onClick={() => setShowPreview(true)}
+                    disabled={!resource.downloadURL}
+                    className="flex items-center justify-center rounded-lg border border-input bg-background/50 p-2 text-foreground transition-colors hover:bg-secondary disabled:opacity-50"
+                    title="Preview Resource"
                 >
                     <Eye className="h-4 w-4" />
-                </a>
+                </button>
             </div>
         </div>
+
+        {/* Preview Modal */}
+        {showPreview && resource.downloadURL && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
+                {/* Backdrop Click */}
+                <div className="absolute inset-0" onClick={() => setShowPreview(false)} />
+                
+                <div className="relative flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-zinc-950 shadow-2xl">
+                    {/* Header */}
+                    <div className="flex items-center justify-between border-b border-white/5 bg-zinc-900/80 px-6 py-4">
+                        <div className="flex items-center gap-3">
+                            <div className="rounded-md bg-blue-500/20 p-2 text-blue-400">
+                                <FileText className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-zinc-100 line-clamp-1">{resource.title}</h3>
+                                <p className="text-xs text-zinc-400">{resource.subject} • {resource.type}</p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => setShowPreview(false)}
+                            className="rounded-full bg-white/5 p-2 text-zinc-400 hover:bg-white/10 hover:text-white transition-colors"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
+
+                    {/* IFrame Content */}
+                    <div className="flex-1 w-full bg-zinc-900/50 p-2 sm:p-4">
+                        <iframe 
+                            src={resource.downloadURL} 
+                            className="h-full w-full rounded-xl border border-white/5 bg-white"
+                            title={resource.title}
+                        />
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     );
 }

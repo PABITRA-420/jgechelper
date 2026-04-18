@@ -4,7 +4,8 @@ import { UploadForm } from "@/components/UploadForm";
 import { useState, useEffect } from "react";
 import { collection, query, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Eye, EyeOff, Trash2, FileText, ExternalLink, Edit2, ArrowUp, ArrowDown } from "lucide-react";
+import { Eye, EyeOff, Trash2, FileText, ExternalLink, Edit2, ArrowUp, ArrowDown, RotateCcw, Archive } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 type ResourceType = {
     id: string;
@@ -18,12 +19,15 @@ type ResourceType = {
     visible?: boolean;
     orderSequence?: number;
     createdAt?: { toMillis: () => number };
+    isDeleted?: boolean;
 };
 
 function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) {
+    const { user } = useAuth();
     const [resources, setResources] = useState<ResourceType[]>([]);
     const [loading, setLoading] = useState(true);
     const [sortBy, setSortBy] = useState<"newest" | "oldest" | "title" | "subject" | "manual">("newest");
+    const [viewTrash, setViewTrash] = useState(false);
 
     useEffect(() => {
         // Fetch all resources and update state without manual sorting
@@ -36,33 +40,35 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
         return () => unsubscribe();
     }, []);
 
-    const sortedResources = [...resources].sort((a, b) => {
-        if (sortBy === "manual") {
-            const orderA = a.orderSequence ?? Number.MAX_SAFE_INTEGER;
-            const orderB = b.orderSequence ?? Number.MAX_SAFE_INTEGER;
-            if (orderA !== orderB) return orderA - orderB;
-            const timeA = a.createdAt?.toMillis() || 0;
-            const timeB = b.createdAt?.toMillis() || 0;
-            return timeB - timeA;
-        }
-        if (sortBy === "newest") {
-            const timeA = a.createdAt?.toMillis() || 0;
-            const timeB = b.createdAt?.toMillis() || 0;
-            return timeB - timeA;
-        }
-        if (sortBy === "oldest") {
-            const timeA = a.createdAt?.toMillis() || 0;
-            const timeB = b.createdAt?.toMillis() || 0;
-            return timeA - timeB;
-        }
-        if (sortBy === "title") {
-            return (a.title || "").localeCompare(b.title || "");
-        }
-        if (sortBy === "subject") {
-            return (a.subject || "").localeCompare(b.subject || "");
-        }
-        return 0;
-    });
+    const sortedResources = [...resources]
+        .filter(r => viewTrash ? r.isDeleted === true : (r.isDeleted !== true))
+        .sort((a, b) => {
+            if (sortBy === "manual") {
+                const orderA = a.orderSequence ?? Number.MAX_SAFE_INTEGER;
+                const orderB = b.orderSequence ?? Number.MAX_SAFE_INTEGER;
+                if (orderA !== orderB) return orderA - orderB;
+                const timeA = a.createdAt?.toMillis() || 0;
+                const timeB = b.createdAt?.toMillis() || 0;
+                return timeB - timeA;
+            }
+            if (sortBy === "newest") {
+                const timeA = a.createdAt?.toMillis() || 0;
+                const timeB = b.createdAt?.toMillis() || 0;
+                return timeB - timeA;
+            }
+            if (sortBy === "oldest") {
+                const timeA = a.createdAt?.toMillis() || 0;
+                const timeB = b.createdAt?.toMillis() || 0;
+                return timeA - timeB;
+            }
+            if (sortBy === "title") {
+                return (a.title || "").localeCompare(b.title || "");
+            }
+            if (sortBy === "subject") {
+                return (a.subject || "").localeCompare(b.subject || "");
+            }
+            return 0;
+        });
 
     const toggleVisibility = async (id: string, currentStatus?: boolean) => {
         try {
@@ -75,12 +81,54 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
     }
 
     const deleteResource = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this resource? This cannot be undone.")) return;
+        if (!confirm("Are you sure you want to move this resource to trash?")) return;
         try {
-            await deleteDoc(doc(db, "resources", id));
+            await updateDoc(doc(db, "resources", id), { isDeleted: true });
         } catch (err) {
-            console.error("Error deleting resource:", err);
-            alert("Failed to delete resource");
+            console.error("Error moving resource to trash:", err);
+            alert("Failed to move resource to trash");
+        }
+    }
+
+    const restoreResource = async (id: string) => {
+        try {
+            await updateDoc(doc(db, "resources", id), { isDeleted: false });
+        } catch (err) {
+            console.error("Error restoring resource:", err);
+            alert("Failed to restore resource");
+        }
+    }
+
+    const hardDeleteResource = async (id: string, downloadURL?: string) => {
+        if (!confirm("⚠️ PERMANENT DELETE\n\nThis will permanently delete this resource from the database AND Vercel storage. This action CANNOT be undone. Are you sure?")) {
+            return;
+        }
+        
+        try {
+            const idToken = user ? await user.getIdToken(true) : '';
+            if (!idToken) {
+                alert("Security error: Could not retrieve fresh token. Please refresh the page.");
+                return;
+            }
+
+            const response = await fetch('/api/upload', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id,
+                    url: downloadURL,
+                    clientPayload: idToken
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to permanently delete resource");
+            }
+            // Real-time listener will auto-remove the row from the UI
+        } catch (err: any) {
+            console.error("Error permanently deleting resource:", err);
+            alert(`Delete failed: ${err.message}`);
         }
     }
 
@@ -120,13 +168,21 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-end">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                    onClick={() => setViewTrash(!viewTrash)}
+                    className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${viewTrash ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'}`}
+                >
+                    <Archive className="h-4 w-4" />
+                    {viewTrash ? 'View Active Resources' : 'View Trash'}
+                </button>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-zinc-500 font-medium whitespace-nowrap">Sort by:</span>
                     <select
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value as any)}
                         className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm dark:border-zinc-800 dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+                        disabled={viewTrash}
                     >
                         <option value="newest">Newest First (Default)</option>
                         <option value="oldest">Oldest First</option>
@@ -178,47 +234,68 @@ function ResourceList({ onEdit }: { onEdit: (resource: ResourceType) => void }) 
                         </div>
 
                         <div className="flex items-center gap-2 self-end sm:self-auto">
-                        <button
-                            onClick={() => onEdit(resource)}
-                            className="rounded p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10"
-                            title="Edit Resource"
-                        >
-                            <Edit2 className="h-4 w-4" />
-                        </button>
+                            <button
+                                onClick={() => onEdit(resource)}
+                                className="rounded p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10"
+                                title="Edit Resource"
+                            >
+                                <Edit2 className="h-4 w-4" />
+                            </button>
 
-                        <a
-                            href={resource.downloadURL}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="rounded p-2 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-                            title="View/Download Document"
-                        >
-                            <ExternalLink className="h-4 w-4" />
-                        </a>
+                            <a
+                                href={resource.downloadURL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded p-2 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                                title="View/Download Document"
+                            >
+                                <ExternalLink className="h-4 w-4" />
+                            </a>
 
-                        <button
-                            onClick={() => toggleVisibility(resource.id, resource.visible)}
-                            className={`rounded p-2 text-xs font-bold transition-colors ${resource.visible === false ? 'bg-zinc-200 text-zinc-500' : 'bg-green-100 text-green-600'}`}
-                            title={resource.visible === false ? "Show Resource" : "Hide Resource"}
-                        >
-                            {resource.visible === false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
+                            {!viewTrash && (
+                                <button
+                                    onClick={() => toggleVisibility(resource.id, resource.visible)}
+                                    className={`rounded p-2 text-xs font-bold transition-colors ${resource.visible === false ? 'bg-zinc-200 text-zinc-500' : 'bg-green-100 text-green-600'}`}
+                                    title={resource.visible === false ? "Show Resource" : "Hide Resource"}
+                                >
+                                    {resource.visible === false ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                            )}
 
-                        <button
-                            onClick={() => deleteResource(resource.id)}
-                            className="rounded p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"
-                            title="Delete Resource"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </button>
+                            {viewTrash ? (
+                                <>
+                                    <button
+                                        onClick={() => restoreResource(resource.id)}
+                                        className="rounded p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10"
+                                        title="Restore Resource"
+                                    >
+                                        <RotateCcw className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => hardDeleteResource(resource.id, resource.downloadURL)}
+                                        className="rounded p-2 text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40"
+                                        title="Permanently Delete (Cannot be undone)"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    onClick={() => deleteResource(resource.id)}
+                                    className="rounded p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"
+                                    title="Move to Trash"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
                     </div>
-                </div>
-            ))}
-            {resources.length === 0 && (
-                <div className="flex h-32 flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 text-center dark:border-zinc-800">
-                    <p className="text-sm text-muted-foreground">No resources uploaded yet.</p>
-                </div>
-            )}
+                ))}
+                {resources.filter(r => viewTrash ? r.isDeleted === true : (r.isDeleted !== true)).length === 0 && (
+                    <div className="flex h-32 flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 text-center dark:border-zinc-800">
+                        <p className="text-sm text-muted-foreground">{viewTrash ? "Trash is empty." : "No resources uploaded yet."}</p>
+                    </div>
+                )}
             </div>
         </div>
     )

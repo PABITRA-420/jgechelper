@@ -12,8 +12,30 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://jgechelper.vercel.app'),
   title: "JGECHelper - Your Academic Companion",
   description: "The ultimate resource hub for JGEC students.",
+  openGraph: {
+    title: "JGECHelper - Your Academic Companion",
+    description: "The ultimate resource hub for JGEC students.",
+    url: "https://jgechelper.vercel.app", // Fallback, normally absolute URL
+    siteName: "JGECHelper",
+    images: [
+      {
+        url: "/icon.png", // Next.js standard public icon fallback
+        width: 800,
+        height: 600,
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "JGECHelper - Your Academic Companion",
+    description: "The ultimate resource hub for JGEC students.",
+    images: ["/icon.png"],
+  },
 };
 
 export default function RootLayout({

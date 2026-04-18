@@ -15,7 +15,7 @@ import {
     ActionCodeSettings
 } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, onSnapshot } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
 // CONFIG: Admin Allowlist (Only used for FIRST login to assign initial role)
@@ -45,8 +45,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
 
     useEffect(() => {
+        let snapshotUnsubscribe: (() => void) | null = null;
+
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setLoading(true);
+
+            // Clean up any existing snapshot listener
+            if (snapshotUnsubscribe) {
+                snapshotUnsubscribe();
+                snapshotUnsubscribe = null;
+            }
 
             if (currentUser) {
                 // Determine if the user is truly "verified" (Google users are auto-verified)
@@ -54,7 +62,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const isVerified = isEmailUser ? currentUser.emailVerified : true;
 
                 setUser(currentUser);
-                //CHANGE DONE HERE//
                 setRole(null); // IMMEDIATE FIX: Clear any old role state while we fetch the new one from Firestore
 
                 // If not verified, we don't fetch role to prevent access to role-protected features
@@ -66,74 +73,94 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 try {
                     const userRef = doc(db, "users", currentUser.uid);
-                    const userSnap = await getDoc(userRef);
 
-                    if (userSnap.exists()) {
-                        const userData = userSnap.data();
+                    // INSTANT ROLE LISTENER
+                    snapshotUnsubscribe = onSnapshot(userRef, async (userSnap) => {
+                        if (userSnap.exists()) {
+                            const userData = userSnap.data();
 
-                        // Enforce ban status
-                        if (userData.status === "banned") {
-                            await signOut(auth);
-                            setUser(null);
-                            setRole(null);
-                            setLoading(false);
-                            router.push("/?banned=true");
-                            return;
+                            // Enforce ban status
+                            if (userData.status === "banned") {
+                                await signOut(auth);
+                                setUser(null);
+                                setRole(null);
+                                setLoading(false);
+                                router.push("/?banned=true");
+                                return;
+                            }
+
+                            // Update role instantly across the app
+                            setRole(userData.role as UserRole);
+
+                            // Note: We avoid updating lastLogin inside onSnapshot to prevent recursive loops
+                        } else {
+                            // NEW USER LOGIC: Only runs once when document isn't found
+                            const isAdmin = currentUser.email && ADMIN_EMAILS.includes(currentUser.email);
+                            const initialRole: UserRole = isAdmin ? "admin" : "user";
+
+                            const newUserData: Record<string, unknown> = {
+                                uid: currentUser.uid,
+                                email: currentUser.email,
+                                role: initialRole,
+                                createdAt: serverTimestamp(),
+                                lastLogin: serverTimestamp(),
+                            };
+
+                            const tempName = typeof window !== 'undefined' ? localStorage.getItem("tempDisplayName") : null;
+                            if (currentUser.displayName) {
+                                newUserData.displayName = currentUser.displayName;
+                            } else if (tempName) {
+                                newUserData.displayName = tempName;
+                            } else if (currentUser.email) {
+                                newUserData.displayName = currentUser.email.split('@')[0];
+                            } else {
+                                newUserData.displayName = "User";
+                            }
+
+                            if (currentUser.photoURL) newUserData.photoURL = currentUser.photoURL;
+
+                            // Create User Document
+                            await setDoc(userRef, newUserData, { merge: true });
+
+                            // Clean up localStorage
+                            if (tempName) {
+                                localStorage.removeItem("tempDisplayName");
+                            }
+
+                            setRole(initialRole);
                         }
 
-                        // RETURNING USER: Trust Firestore Role
-                        setRole(userData.role as UserRole);
+                        // Unlock UI
+                        setLoading(false);
+                    }, (error) => {
+                        console.error("Error with user snapshot:", error);
+                        setRole(null);
+                        setLoading(false);
+                    });
 
-                        // Optional: Update last login time
-                        await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
+                    // Update last login time independently so as not to spam snapshot
+                    await setDoc(userRef, { lastLogin: serverTimestamp() }, { merge: true });
 
-                    } else {
-                        // NEW USER: Determine Role based on Allowlist
-                        const isAdmin = currentUser.email && ADMIN_EMAILS.includes(currentUser.email);
-                        const initialRole: UserRole = isAdmin ? "admin" : "user";
-
-                        const newUserData: Record<string, unknown> = {
-                            uid: currentUser.uid,
-                            email: currentUser.email,
-                            role: initialRole,
-                            createdAt: serverTimestamp(),
-                            lastLogin: serverTimestamp(),
-                        };
-
-                        const tempName = localStorage.getItem("tempDisplayName");
-                        if (currentUser.displayName) {
-                            newUserData.displayName = currentUser.displayName;
-                        } else if (tempName) {
-                            newUserData.displayName = tempName;
-                        }
-
-                        if (currentUser.photoURL) newUserData.photoURL = currentUser.photoURL;
-
-                        // Create User Document
-                        await setDoc(userRef, newUserData, { merge: true });
-
-                        // Clean up localStorage
-                        if (tempName) {
-                            localStorage.removeItem("tempDisplayName");
-                        }
-
-                        setRole(initialRole);
-                    }
                 } catch (error) {
-                    console.error("Error fetching user role:", error);
+                    console.error("Error setting up user listener:", error);
                     setRole(null); // Fallback to no role on error
+                    setLoading(false);
                 }
 
             } else {
                 // User logged out
                 setUser(null);
                 setRole(null);
+                setLoading(false);
             }
-
-            setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => {
+            if (snapshotUnsubscribe) {
+                snapshotUnsubscribe();
+            }
+            unsubscribe();
+        };
     }, [router]);
 
     const signInWithGoogle = async () => {

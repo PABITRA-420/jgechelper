@@ -4,6 +4,8 @@ import { UploadCloud, X, FileText, CheckCircle, AlertCircle, ChevronDown, Check,
 import { useState, useEffect, useRef } from "react";
 import { collection, addDoc, serverTimestamp, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { upload } from '@vercel/blob/client';
+import { useAuth } from "@/context/AuthContext";
 
 export type UploadFormResource = {
     id: string;
@@ -25,6 +27,8 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
     const [uploadProgress, setUploadProgress] = useState(0);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const { user } = useAuth();
 
     // Form State
     const [title, setTitle] = useState("");
@@ -142,39 +146,47 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
             let currentFileName = existingAttachment.name;
 
             if (file) {
-                // 1. Upload File to Vercel Blob via Next.js API with progress tracking
+                // 1. Upload File DIRECTLY to Vercel Blob (Client Upload)
                 setUploadProgress(0);
-                const blob = await new Promise<any>((resolve, reject) => {
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('POST', `/api/upload?filename=${encodeURIComponent(file.name)}`);
-                    xhr.setRequestHeader('x-upload-secret', process.env.NEXT_PUBLIC_UPLOAD_SECRET || '');
 
-                    xhr.upload.onprogress = (event) => {
-                        if (event.lengthComputable) {
-                            const percentComplete = Math.round((event.loaded / event.total) * 100);
-                            setUploadProgress(percentComplete);
+                // Force refresh token to prevent 'Unauthorized' due to token expiration
+                const idToken = user ? await user.getIdToken(true) : '';
+
+                if (!idToken) {
+                    setError("Security Error: Failed to generate authentication token locally. Please re-login.");
+                    setUploading(false);
+                    return;
+                }
+
+                // --- DIAGNOSTICS: Intercept backend error manually to display it ---
+                try {
+                    const debugRes = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            type: 'blob.generate-client-token',
+                            payload: { pathname: file.name, callbackUrl: window.location.href, clientPayload: idToken }
+                        })
+                    });
+                    if (!debugRes.ok) {
+                        const errData = await debugRes.json().catch(() => null);
+                        setError(`Server Rejected Token: ${errData?.error || debugRes.statusText}`);
+                        setUploading(false);
+                        return;
+                    }
+                } catch (debugErr: any) {
+                    // Only catch network/parsing errors here
+                }
+                // --- END DIAGNOSTICS ---
+
+                const blob = await upload(file.name, file, {
+                    access: 'public',
+                    handleUploadUrl: '/api/upload',
+                    clientPayload: idToken,
+                    onUploadProgress: (progressEvent) => {
+                        if (progressEvent.percentage) {
+                            setUploadProgress(progressEvent.percentage);
                         }
-                    };
-
-                    xhr.onload = () => {
-                        if (xhr.status >= 200 && xhr.status < 300) {
-                            try {
-                                resolve(JSON.parse(xhr.responseText));
-                            } catch (e) {
-                                reject(new Error("Invalid response from server"));
-                            }
-                        } else {
-                            try {
-                                const errorData = JSON.parse(xhr.responseText);
-                                reject(new Error(errorData.error || "Failed to upload file"));
-                            } catch (e) {
-                                reject(new Error(`Failed to upload file: ${xhr.statusText}`));
-                            }
-                        }
-                    };
-
-                    xhr.onerror = () => reject(new Error("Network error during upload"));
-                    xhr.send(file);
+                    },
                 });
 
                 currentDownloadURL = blob.url;
@@ -330,8 +342,8 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                 {/* Drag & Drop Zone */}
                 <div
                     className={`relative mt-4 flex h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-200 ease-in-out ${dragActive
-                            ? "border-blue-500 bg-blue-50/80 scale-[1.01] shadow-sm dark:border-blue-500 dark:bg-blue-500/10"
-                            : "border-zinc-300 bg-zinc-50/50 hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/50 dark:hover:bg-zinc-800/80"
+                        ? "border-blue-500 bg-blue-50/80 scale-[1.01] shadow-sm dark:border-blue-500 dark:bg-blue-500/10"
+                        : "border-zinc-300 bg-zinc-50/50 hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/50 dark:hover:bg-zinc-800/80"
                         }`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
@@ -342,7 +354,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                         type="file"
                         className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
                         onChange={handleChange}
-                        accept=".pdf,.doc,.docx"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
                     />
 
                     {file || existingAttachment.url ? (
@@ -368,7 +380,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                             <p className="text-sm text-zinc-600 dark:text-zinc-300">
                                 <span className="font-semibold text-blue-600 dark:text-blue-400">Click to upload</span> or drag and drop
                             </p>
-                            <p className="text-xs text-zinc-400 mt-1">PDF, DOC, DOCX up to 5 MB</p>
+                            <p className="text-xs text-zinc-400 mt-1">PDF, DOC, DOCX, JPG, PNG up to 20 MB</p>
                         </>
                     )}
                 </div>

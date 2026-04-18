@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { Navbar } from "@/components/Navbar";
 import { ResourceCard } from "@/components/ResourceCard";
 import { Search, ChevronRight, ArrowLeft, BookOpen, Loader2 } from "lucide-react";
-import { collection, query, onSnapshot } from "firebase/firestore";
+import { collection, query, onSnapshot, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -24,6 +24,7 @@ interface Resource {
     createdAt: { toDate: () => Date; toMillis: () => number };
     visible?: boolean;
     orderSequence?: number;
+    isDeleted?: boolean;
 }
 
 const BRANCHES = [
@@ -60,7 +61,7 @@ function ResourcesContent() {
     const [selectedType, setSelectedType] = useState<string>("All");
 
     const { user, role, loading: authLoading } = useAuth();
-    
+
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -78,7 +79,7 @@ function ResourcesContent() {
         if (view === "resources" && selectedBranch && selectedSemester && role) {
             setLoading(true);
             const resourcesRef = collection(db, "resources");
-            const q = query(resourcesRef);
+            const q = query(resourcesRef, where("semester", "==", selectedSemester));
 
             unsubscribe = onSnapshot(q, (snapshot) => {
                 const fetchedResources = (snapshot.docs
@@ -87,7 +88,7 @@ function ResourcesContent() {
                         ...doc.data(),
                         date: doc.data().createdAt?.toDate().toLocaleDateString() || "Unknown Date"
                     })) as Resource[])
-                    .filter(res => res.semester === selectedSemester)
+                    .filter(res => res.isDeleted !== true)
                     .filter(res => {
                         if (res.branches && Array.isArray(res.branches)) {
                             return res.branches.includes(selectedBranch!);
@@ -175,116 +176,116 @@ function ResourcesContent() {
                 ) : (
                     <AnimatePresence mode="wait">
                         {/* STEP 1: BRANCH SELECTION */}
-                {view === "branches" && (
-                    <motion.div key="branches" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {BRANCHES.map((branch) => (
-                            <button
-                                key={branch.id}
-                                onClick={() => handleBranchSelect(branch.id)}
-                                className="glass group relative flex flex-col items-center justify-center gap-4 rounded-2xl p-8 text-center transition-all hover:-translate-y-1 hover:shadow-xl dark:bg-zinc-900/50"
-                            >
-                                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/10 text-4xl shadow-inner dark:bg-blue-500/20">
-                                    {branch.icon}
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-foreground">{branch.name}</h3>
-                                    <p className="text-sm font-medium text-muted-foreground">{branch.id}</p>
-                                </div>
-                                <div className="absolute right-4 top-4 opacity-0 transition-opacity group-hover:opacity-100">
-                                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                                </div>
-                            </button>
-                        ))}
-                    </motion.div>
-                )}
-
-                {/* STEP 2: SEMESTER SELECTION */}
-                {view === "semesters" && (
-                    <motion.div key="semesters" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        {SEMESTERS.map((sem, index) => (
-                            <button
-                                key={sem}
-                                onClick={() => handleSemesterSelect(sem)}
-                                className="glass group relative flex flex-col items-start justify-between gap-4 rounded-xl p-6 text-left transition-all hover:-translate-y-1 hover:shadow-lg dark:bg-zinc-900/50"
-                            >
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
-                                    <span className="font-bold">{index + 1}</span>
-                                </div>
-                                <div>
-                                    <h3 className="font-semibold text-foreground">{sem}</h3>
-                                    <p className="text-xs text-muted-foreground">Click to view files</p>
-                                </div>
-                            </button>
-                        ))}
-                    </motion.div>
-                )}
-
-                {/* STEP 3: RESOURCES LIST */}
-                {view === "resources" && (
-                    <motion.div key="resources" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="space-y-6">
-                        {resources.length > 0 && (
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="flex flex-wrap gap-2">
-                                    {["All", "Question Paper", "Notes", "Routine", "Others"].map((t) => (
-                                        <button
-                                            key={t}
-                                            onClick={() => setSelectedType(t)}
-                                            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${selectedType === t
-                                                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                                                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
-                                                }`}
-                                        >
-                                            {t}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="relative w-full sm:max-w-xs">
-                                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search resources..."
-                                        className="w-full rounded-xl border-0 bg-white py-2.5 pl-10 pr-4 shadow-sm ring-1 ring-inset ring-zinc-200 focus:ring-2 focus:ring-inset focus:ring-blue-500 dark:bg-black dark:ring-zinc-800"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        {loading ? (
-                            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} style={{ animationDelay: `${i * 100}ms` }} className="h-48 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-800"></div>
-                                ))}
-                            </div>
-                        ) : resources.length > 0 ? (
-                            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {resources
-                                    .filter(r => selectedType === "All" || r.type === selectedType)
-                                    .filter(r => (r.title || "").toLowerCase().includes(searchQuery.toLowerCase()) || (r.subject || "").toLowerCase().includes(searchQuery.toLowerCase()))
-                                    .map((resource) => (
-                                        <ResourceCard key={resource.id} resource={resource} />
-                                    ))}
-                            </div>
-                        ) : (
-                            <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
-                                <BookOpen className="mb-4 h-12 w-12 text-zinc-300 dark:text-zinc-700" />
-                                <p className="text-lg font-medium text-foreground">No resources found</p>
-                                <p className="text-sm text-muted-foreground">
-                                    No content uploaded for {selectedBranch} {selectedSemester} yet.
-                                </p>
-                                {role === "admin" && (
+                        {view === "branches" && (
+                            <motion.div key="branches" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                {BRANCHES.map((branch) => (
                                     <button
-                                        onClick={() => router.push('/admin/resources')}
-                                        className="mt-6 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+                                        key={branch.id}
+                                        onClick={() => handleBranchSelect(branch.id)}
+                                        className="glass group relative flex flex-col items-center justify-center gap-4 rounded-2xl p-8 text-center transition-all hover:-translate-y-1 hover:shadow-xl dark:bg-zinc-900/50"
                                     >
-                                        Upload Resource
+                                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500/10 text-4xl shadow-inner dark:bg-blue-500/20">
+                                            {branch.icon}
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-foreground">{branch.name}</h3>
+                                            <p className="text-sm font-medium text-muted-foreground">{branch.id}</p>
+                                        </div>
+                                        <div className="absolute right-4 top-4 opacity-0 transition-opacity group-hover:opacity-100">
+                                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                                        </div>
                                     </button>
-                                )}
-                            </div>
+                                ))}
+                            </motion.div>
                         )}
-                    </motion.div>
-                )}
+
+                        {/* STEP 2: SEMESTER SELECTION */}
+                        {view === "semesters" && (
+                            <motion.div key="semesters" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                {SEMESTERS.map((sem, index) => (
+                                    <button
+                                        key={sem}
+                                        onClick={() => handleSemesterSelect(sem)}
+                                        className="glass group relative flex flex-col items-start justify-between gap-4 rounded-xl p-6 text-left transition-all hover:-translate-y-1 hover:shadow-lg dark:bg-zinc-900/50"
+                                    >
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400">
+                                            <span className="font-bold">{index + 1}</span>
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-foreground">{sem}</h3>
+                                            <p className="text-xs text-muted-foreground">Click to view files</p>
+                                        </div>
+                                    </button>
+                                ))}
+                            </motion.div>
+                        )}
+
+                        {/* STEP 3: RESOURCES LIST */}
+                        {view === "resources" && (
+                            <motion.div key="resources" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="space-y-6">
+                                {resources.length > 0 && (
+                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                        <div className="flex flex-wrap gap-2">
+                                            {["All", "Question Paper", "Notes", "Routine", "Others"].map((t) => (
+                                                <button
+                                                    key={t}
+                                                    onClick={() => setSelectedType(t)}
+                                                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${selectedType === t
+                                                        ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                                                        : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                                                        }`}
+                                                >
+                                                    {t}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="relative w-full sm:max-w-xs">
+                                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search resources..."
+                                                className="w-full rounded-xl border-0 bg-white py-2.5 pl-10 pr-4 shadow-sm ring-1 ring-inset ring-zinc-200 focus:ring-2 focus:ring-inset focus:ring-blue-500 dark:bg-black dark:ring-zinc-800"
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {loading ? (
+                                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                        {[1, 2, 3].map((i) => (
+                                            <div key={i} style={{ animationDelay: `${i * 100}ms` }} className="h-48 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-800"></div>
+                                        ))}
+                                    </div>
+                                ) : resources.length > 0 ? (
+                                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                        {resources
+                                            .filter(r => selectedType === "All" || r.type === selectedType)
+                                            .filter(r => (r.title || "").toLowerCase().includes(searchQuery.toLowerCase()) || (r.subject || "").toLowerCase().includes(searchQuery.toLowerCase()))
+                                            .map((resource) => (
+                                                <ResourceCard key={resource.id} resource={resource} />
+                                            ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
+                                        <BookOpen className="mb-4 h-12 w-12 text-zinc-300 dark:text-zinc-700" />
+                                        <p className="text-lg font-medium text-foreground">No resources found</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            No content uploaded for {selectedBranch} {selectedSemester} yet.
+                                        </p>
+                                        {role === "admin" && (
+                                            <button
+                                                onClick={() => router.push('/admin/resources')}
+                                                className="mt-6 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+                                            >
+                                                Upload Resource
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
                     </AnimatePresence>
                 )}
             </div>
