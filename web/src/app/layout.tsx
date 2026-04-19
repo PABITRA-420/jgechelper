@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import MaintenanceWrapper from "@/components/MaintenanceWrapper";
 import NetworkMonitor from "@/components/NetworkMonitor";
@@ -47,17 +48,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${GeistSans.variable} antialiased selection:bg-primary selection:text-primary-foreground`}>
-        <AuthProvider>
-          <NetworkMonitor />
-          <MaintenanceWrapper>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <NetworkMonitor />
+            <MaintenanceWrapper>
             <OnboardingWrapper>
               {children}
             </OnboardingWrapper>
-            <Toaster position="bottom-right" richColors theme="system" />
+            <Toaster position="bottom-right" richColors />
           </MaintenanceWrapper>
         </AuthProvider>
+        </ThemeProvider>
         <SpeedInsights />
         <Analytics />
       </body>
