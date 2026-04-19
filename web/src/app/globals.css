@@ -17,7 +17,7 @@
 }
 
 :root {
-  /* LIGHT THEME (Commented out for future use)
+  /* LIGHT THEME */
   --background: #ffffff;
   --foreground: #09090b;
   --primary: #18181b;
@@ -26,9 +26,13 @@
   --secondary-foreground: #18181b;
   --accent: #f4f4f5;
   --accent-foreground: #18181b;
-  */
 
-  /* DARK THEME (Forced as default) */
+  --font-inter: 'Inter', sans-serif;
+  --font-geist: 'Geist', sans-serif;
+}
+
+.dark {
+  /* DARK THEME */
   --background: #09090b;
   --foreground: #fafafa;
   --primary: #fafafa;
@@ -37,9 +41,6 @@
   --secondary-foreground: #fafafa;
   --accent: #27272a;
   --accent-foreground: #fafafa;
-
-  --font-inter: 'Inter', sans-serif;
-  --font-geist: 'Geist', sans-serif;
 }
 
 /*
@@ -65,8 +66,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Forced dark theme background effects */
-/* @media (prefers-color-scheme: dark) { */
+/* Theme background effects */
   body::before {
     content: "";
     position: fixed;

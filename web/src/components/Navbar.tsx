@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Menu, LogOut, LayoutDashboard, User, X, Mail } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function Navbar() {
     const { user, role, loading, logout } = useAuth();
@@ -75,6 +76,7 @@ export function Navbar() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-4">
+                    <ThemeToggle />
                     {loading ? (
                         <div className="hidden md:flex items-center gap-4 animate-pulse">
                             <div className="h-9 w-24 rounded-full bg-zinc-200 dark:bg-zinc-800"></div>
