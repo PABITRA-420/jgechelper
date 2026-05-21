@@ -11,7 +11,7 @@ export default function AdminSettingsPage() {
     const [settings, setSettings] = useState({
         maintenanceMode: false,
         maintenanceEndTime: "",
-        contactEmail: "admin@jgec.ac.in",
+        contactEmail: "admin.jgechelper@gmail.com",
     });
 
     useEffect(() => {
@@ -20,10 +20,10 @@ export default function AdminSettingsPage() {
                 const docRef = doc(db, "settings", "general");
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
-                    setSettings({
-                        ...settings,
+                    setSettings(prev => ({
+                        ...prev,
                         ...docSnap.data(),
-                    });
+                    }));
                 }
             } catch (error) {
                 console.error("Error fetching settings:", error);
@@ -76,8 +76,8 @@ export default function AdminSettingsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-                <p className="text-muted-foreground">Configure system preferences.</p>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Settings</h1>
+                <p className="text-sm text-muted-foreground">Configure system preferences.</p>
             </div>
 
             <div className="max-w-2xl rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">

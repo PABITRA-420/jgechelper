@@ -50,31 +50,23 @@ export async function POST(request: Request): Promise<NextResponse> {
                         'image/webp'
                     ],
                     tokenPayload: JSON.stringify({}),
-                    // Limit upload size to 15MB to prevent storage quota abuse and protect your Vercel Free tier limits
+                    // Limit upload size to 20MB to prevent storage quota abuse
                     maximumSizeInBytes: 20 * 1024 * 1024,
                 };
             },
             onUploadCompleted: async ({ blob, tokenPayload }) => {
-                console.log('blob upload completed', blob, tokenPayload);
+                // Upload completed successfully
             },
         });
         return NextResponse.json(jsonResponse);
 
-        /* OLD UPLOAD LOGIC
-        // Process the upload
-        const blob = await put(filename, request.body as ReadableStream, {
-            access: 'public',
-        });
-
-        return NextResponse.json(blob);
-        */
     } catch (error: unknown) {
         console.error('Error uploading to Vercel Blob:', error);
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         const status = errorMessage.includes('Unauthorized') ? 401 : 400;
         return NextResponse.json(
             { error: errorMessage },
-            { status } 
+            { status }
         );
     }
 }

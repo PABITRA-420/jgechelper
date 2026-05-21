@@ -1,5 +1,6 @@
-import { Calendar, AlertCircle, Paperclip, ExternalLink } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { Calendar, AlertCircle, ExternalLink, Megaphone, BookOpen, TreePalm, FileText, ImageIcon } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { getRelativeTimeFromMs } from "@/lib/utils";
 
 interface NoticeProps {
     id: number | string;
@@ -10,6 +11,33 @@ interface NoticeProps {
     attachmentUrl?: string;
     attachmentName?: string;
     createdAt?: number;
+}
+
+// Category badge color map
+const categoryStyles: Record<string, string> = {
+    General: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400",
+    Exam: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400",
+    Holiday: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400",
+    Urgent: "bg-red-500 text-white",
+};
+
+// Category icon map
+const categoryIcons: Record<string, React.ReactNode> = {
+    General: <Megaphone className="h-3 w-3" />,
+    Exam: <BookOpen className="h-3 w-3" />,
+    Holiday: <TreePalm className="h-3 w-3" />,
+    Urgent: <AlertCircle className="h-3 w-3" />,
+};
+
+
+
+/** Returns the right icon based on file extension */
+function getAttachmentIcon(name?: string) {
+    if (!name) return <FileText className="h-4 w-4" />;
+    const ext = name.split(".").pop()?.toLowerCase();
+    if (ext === "pdf") return <FileText className="h-4 w-4" />;
+    if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext || "")) return <ImageIcon className="h-4 w-4" />;
+    return <FileText className="h-4 w-4" />;
 }
 
 export function NoticeCard({ notice }: { notice: NoticeProps }) {
@@ -43,6 +71,17 @@ export function NoticeCard({ notice }: { notice: NoticeProps }) {
         setIsNew(diff >= -86400000 && diff < sevenDaysMs);
     }, [notice]);
 
+    const badgeStyle = categoryStyles[notice.category] || categoryStyles.General;
+    const badgeIcon = categoryIcons[notice.category] || categoryIcons.General;
+
+    // Relative time (memoized)
+    const relativeTime = useMemo(() => {
+        if (notice.createdAt && notice.createdAt > 0) {
+            return getRelativeTimeFromMs(notice.createdAt);
+        }
+        return "";
+    }, [notice.createdAt]);
+
     return (
         <div 
             ref={divRef}
@@ -57,16 +96,16 @@ export function NoticeCard({ notice }: { notice: NoticeProps }) {
                 className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 z-0"
                 style={{
                     opacity,
+                    willChange: "background",
                     background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(${isUrgent ? '239, 68, 68' : '59, 130, 246'}, 0.15), transparent 40%)`,
                 }}
             />
             <div className="relative z-10 flex items-start justify-between gap-4">
                 <div className="flex-1">
-                    <div className="mb-2 flex items-center gap-2">
-                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${isUrgent
-                            ? "bg-red-500 text-white"
-                            : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-                            }`}>
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                        {/* Category badge with icon and distinct color */}
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeStyle}`}>
+                            {badgeIcon}
                             {notice.category}
                         </span>
                         {isNew && (
@@ -74,9 +113,13 @@ export function NoticeCard({ notice }: { notice: NoticeProps }) {
                                 New
                             </span>
                         )}
-                        <span className="flex items-center text-xs text-muted-foreground">
-                            <Calendar className="mr-1 h-3 w-3" />
-                            {notice.date}
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            {relativeTime ? (
+                                <span title={notice.date}>{relativeTime}</span>
+                            ) : (
+                                notice.date
+                            )}
                         </span>
                     </div>
 
@@ -95,7 +138,7 @@ export function NoticeCard({ notice }: { notice: NoticeProps }) {
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-blue-400 dark:hover:bg-zinc-800"
                             >
-                                <Paperclip className="h-4 w-4" />
+                                {getAttachmentIcon(notice.attachmentName)}
                                 {notice.attachmentName || "View Attachment"}
                                 <ExternalLink className="h-3 w-3 opacity-50" />
                             </a>

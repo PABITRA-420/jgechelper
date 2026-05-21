@@ -7,6 +7,8 @@ import { motion } from "framer-motion";
 import { Menu, LogOut, LayoutDashboard, User, X, Mail } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export function Navbar() {
     const { user, role, loading, logout } = useAuth();
@@ -14,9 +16,37 @@ export function Navbar() {
     const pathname = usePathname();
     const [hoveredPath, setHoveredPath] = useState(pathname);
 
+    const [newNoticeCount, setNewNoticeCount] = useState(0);
+
     useEffect(() => {
         setHoveredPath(pathname);
     }, [pathname]);
+
+    // Listen for new notices (< 24h old) — Feature #13
+    useEffect(() => {
+        if (!user || !role) {
+            setNewNoticeCount(0);
+            return;
+        }
+
+        const noticesRef = collection(db, "notices");
+        const q = query(noticesRef, orderBy("createdAt", "desc"), limit(10));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+            let count = 0;
+            snapshot.docs.forEach((doc) => {
+                const data = doc.data();
+                if (data.visible === false) return;
+                if (data.isDeleted === true) return;
+                const createdAt = data.createdAt?.toMillis?.() || 0;
+                if (createdAt > oneDayAgo) count++;
+            });
+            setNewNoticeCount(count);
+        });
+
+        return () => unsubscribe();
+    }, [user, role]);
 
     const navItems = [
         { name: "Resources", path: "/resources" },
@@ -68,7 +98,14 @@ export function Navbar() {
                                         transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                                     />
                                 )}
-                                <span className="relative z-10">{item.name}</span>
+                                <span className="relative z-10">
+                                    {item.name}
+                                    {item.name === "Notices" && newNoticeCount > 0 && (
+                                        <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white animate-pulse-shadow">
+                                            {newNoticeCount}
+                                        </span>
+                                    )}
+                                </span>
                             </Link>
                         )
                     })}
@@ -180,8 +217,13 @@ export function Navbar() {
                     <Link href="/resources" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-foreground">
                         Resources
                     </Link>
-                    <Link href="/notices" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-foreground">
+                    <Link href="/notices" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-foreground flex items-center">
                         Notices
+                        {newNoticeCount > 0 && (
+                            <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white animate-pulse-shadow">
+                                {newNoticeCount}
+                            </span>
+                        )}
                     </Link>
                     <Link href="/about" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-foreground">
                         About
