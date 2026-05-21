@@ -57,10 +57,16 @@ export default function MaintenanceWrapper({ children }: MaintenanceWrapperProps
 
     useEffect(() => {
         if (typeof window !== "undefined") {
-            const storedTime = localStorage.getItem("arrival_time");
+            // sessionStorage clears when the tab/browser is closed.
+            // This means anyone who opens a fresh tab/window during maintenance
+            // gets a brand-new timestamp → detected as a new arrival → blocked.
+            // Users already on the page keep their timestamp for the lifetime of
+            // that tab, so they can freely navigate (resources, notices, etc.)
+            // without being interrupted.
+            const storedTime = sessionStorage.getItem("arrival_time");
             if (!storedTime) {
                 const now = Date.now();
-                localStorage.setItem("arrival_time", now.toString());
+                sessionStorage.setItem("arrival_time", now.toString());
                 setTimeout(() => setArrivalTime(now), 0);
             } else {
                 setTimeout(() => setArrivalTime(parseInt(storedTime, 10)), 0);
@@ -89,7 +95,8 @@ export default function MaintenanceWrapper({ children }: MaintenanceWrapperProps
     }
 
     // 3. Admin Bypass: Admins pass through regardless of maintenance mode
-    const isSuperAdmin = user?.email === "sarkarpabitra1510@gmail.com";
+    const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "").split(",").map(e => e.trim()).filter(Boolean);
+    const isSuperAdmin = user?.email ? adminEmails.includes(user.email) : false;
     if (role === "admin" || isSuperAdmin) {
         return (
             <>

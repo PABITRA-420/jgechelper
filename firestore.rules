@@ -51,8 +51,10 @@ service cloud.firestore {
     }
 
     match /notices/{noticeId} {
-      // Students can only see visible notices
-      allow read: if isStudent() && (!("visible" in resource.data) || resource.data.visible == true);
+      // Students can only see visible notices that are NOT soft-deleted
+      allow read: if isStudent() && 
+                  (!("visible" in resource.data) || resource.data.visible == true) &&
+                  (!("isDeleted" in resource.data) || resource.data.isDeleted == false);
     }
     
     match /users/{userId} {

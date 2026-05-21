@@ -20,7 +20,7 @@ import { useRouter } from "next/navigation";
 
 // CONFIG: Admin Allowlist (Only used for FIRST login to assign initial role)
 // After the role is saved to Firestore, this list is ignored for that user.
-const ADMIN_EMAILS = ["sarkarpabitra1510@gmail.com"];
+const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "").split(",").map(e => e.trim()).filter(Boolean);
 
 // Role type definitions
 type UserRole = "admin" | "user" | null;

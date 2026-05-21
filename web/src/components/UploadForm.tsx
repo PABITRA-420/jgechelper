@@ -98,21 +98,31 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
         }
     };
 
+    const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+
+    const validateAndSetFile = (selectedFile: File) => {
+        if (selectedFile.size > MAX_FILE_SIZE) {
+            const sizeMB = (selectedFile.size / (1024 * 1024)).toFixed(1);
+            toast.error(`File too large (${sizeMB} MB). Maximum allowed size is 20 MB.`);
+            return;
+        }
+        setFile(selectedFile);
+        setExistingAttachment({ url: null, name: null });
+    };
+
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            setFile(e.dataTransfer.files[0]);
-            setExistingAttachment({ url: null, name: null });
+            validateAndSetFile(e.dataTransfer.files[0]);
         }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         e.preventDefault();
         if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
-            setExistingAttachment({ url: null, name: null });
+            validateAndSetFile(e.target.files[0]);
         }
     };
 
@@ -151,26 +161,6 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                     return;
                 }
 
-                // --- DIAGNOSTICS: Intercept backend error manually to display it ---
-                try {
-                    const debugRes = await fetch('/api/upload', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            type: 'blob.generate-client-token',
-                            payload: { pathname: file.name, callbackUrl: window.location.href, clientPayload: idToken }
-                        })
-                    });
-                    if (!debugRes.ok) {
-                        const errData = await debugRes.json().catch(() => null);
-                        toast.error(`Server Rejected Token: ${errData?.error || debugRes.statusText}`);
-                        setUploading(false);
-                        return;
-                    }
-                } catch (debugErr: unknown) {
-                    // Only catch network/parsing errors here
-                }
-                // --- END DIAGNOSTICS ---
-
                 const blob = await upload(file.name, file, {
                     access: 'public',
                     handleUploadUrl: '/api/upload',
@@ -181,6 +171,19 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                         }
                     },
                 });
+
+                // Delete old blob from storage if replacing (prevents orphaned files)
+                if (existingAttachment.url && editingResource) {
+                    try {
+                        await fetch("/api/upload", {
+                            method: "DELETE",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ url: existingAttachment.url, clientPayload: idToken }),
+                        });
+                    } catch {
+                        // Non-critical: old file stays in storage but new one is saved
+                    }
+                }
 
                 currentDownloadURL = blob.url;
                 currentFileName = file.name;
@@ -227,7 +230,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
     };
 
     return (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold">{editingResource ? "Edit Resource" : "Upload Resource"}</h3>
                 {editingResource && onClearEdit && (

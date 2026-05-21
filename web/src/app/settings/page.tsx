@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
-import { User, Mail, Shield, AlertCircle, Camera } from "lucide-react";
+import { User, Mail, Shield, AlertCircle } from "lucide-react";
 
 export default function SettingsPage() {
     const { user, role } = useAuth();
@@ -78,9 +78,6 @@ export default function SettingsPage() {
                                                 <User className="h-10 w-10" />
                                             </div>
                                         )}
-                                        <button className="absolute bottom-0 right-0 rounded-full border-2 border-background bg-blue-500 p-2 text-white shadow-sm hover:bg-blue-600 transition-colors">
-                                            <Camera className="h-4 w-4" />
-                                        </button>
                                     </div>
                                     <div>
                                         <h3 className="text-2xl font-bold">{user.displayName || "JGEC Student"}</h3>
@@ -122,8 +119,11 @@ export default function SettingsPage() {
                                             <p className="font-medium">Email Alerts</p>
                                             <p className="text-xs text-muted-foreground mt-1">Receive emails about urgent notices</p>
                                         </div>
-                                        <div className="flex h-5 w-9 cursor-pointer items-center rounded-full bg-blue-500 p-0.5">
-                                            <div className="h-4 w-4 translate-x-4 rounded-full bg-white shadow-sm transition-transform" />
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Coming Soon</span>
+                                            <div className="flex h-5 w-9 cursor-not-allowed items-center rounded-full bg-zinc-300 dark:bg-zinc-700 p-0.5 opacity-50">
+                                                <div className="h-4 w-4 translate-x-0 rounded-full bg-white shadow-sm" />
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between rounded-lg border border-border bg-background/50 p-4">
@@ -131,8 +131,11 @@ export default function SettingsPage() {
                                             <p className="font-medium">App Announcements</p>
                                             <p className="text-xs text-muted-foreground mt-1">In-app popups and new features</p>
                                         </div>
-                                        <div className="flex h-5 w-9 cursor-pointer items-center rounded-full bg-blue-500 p-0.5">
-                                            <div className="h-4 w-4 translate-x-4 rounded-full bg-white shadow-sm transition-transform" />
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Coming Soon</span>
+                                            <div className="flex h-5 w-9 cursor-not-allowed items-center rounded-full bg-zinc-300 dark:bg-zinc-700 p-0.5 opacity-50">
+                                                <div className="h-4 w-4 translate-x-0 rounded-full bg-white shadow-sm" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

@@ -18,7 +18,7 @@ export function OnboardingWrapper({ children }: { children: React.ReactNode }) {
     }
 
     // Security Gate: If completely unauthenticated, unverified (no role), or they already have a branch, render the app normally
-    if (!user || !role || userBranch) {
+    if (!user || !role || userBranch || role === "admin") {
         return <>{children}</>;
     }
 
