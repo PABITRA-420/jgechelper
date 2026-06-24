@@ -23,10 +23,12 @@ type EditNoticeType = {
 
 // ─── Notice Form ─────────────────────────────────────────────────────────────
 function NoticeForm({ editingNotice, onClearEdit }: { editingNotice: EditNoticeType | null, onClearEdit: () => void }) {
+    const { user } = useAuth();
     const [title, setTitle] = useState("");
     const [category, setCategory] = useState("General");
     const [desc, setDesc] = useState("");
     const [posting, setPosting] = useState(false);
+    const [sendNotification, setSendNotification] = useState(true);
 
     // File Upload State
     const [file, setFile] = useState<File | null>(null);
@@ -130,6 +132,31 @@ function NoticeForm({ editingNotice, onClearEdit }: { editingNotice: EditNoticeT
                     attachmentUrl: attachmentUrl, // Optional PDF
                     attachmentName: attachmentName
                 });
+
+                // Push Notification
+                if (sendNotification) {
+                    try {
+                        const idToken = user ? await user.getIdToken(true) : '';
+                        if (idToken) {
+                            await fetch("/api/notifications/send", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": `Bearer ${idToken}`
+                                },
+                                body: JSON.stringify({
+                                    title: `${category} Notice: ${title}`,
+                                    body: desc.substring(0, 150) + (desc.length > 150 ? "..." : ""),
+                                    topic: "global",
+                                    link: "/notices",
+                                })
+                            });
+                        }
+                    } catch (err) {
+                        console.error("FCM notice notification dispatch failed:", err);
+                    }
+                }
+
                 setTitle("");
                 setDesc("");
                 setCategory("General");
@@ -229,6 +256,21 @@ function NoticeForm({ editingNotice, onClearEdit }: { editingNotice: EditNoticeT
                     </div>
                 )}
             </div>
+
+            {!editingNotice && (
+                <div className="flex items-center gap-2 mt-2 select-none">
+                    <input
+                        id="sendNoticeNotification"
+                        type="checkbox"
+                        checked={sendNotification}
+                        onChange={(e) => setSendNotification(e.target.checked)}
+                        className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-500/20 dark:text-white"
+                    />
+                    <label htmlFor="sendNoticeNotification" className="text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer">
+                        Send push notification alert to all students
+                    </label>
+                </div>
+            )}
 
             <button disabled={posting || isOverLimit} className="flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed sm:w-auto dark:bg-zinc-100 dark:text-zinc-900">
                 <Send className="h-4 w-4" />

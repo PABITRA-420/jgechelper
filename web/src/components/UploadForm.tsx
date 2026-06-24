@@ -36,6 +36,7 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
     const [semester, setSemester] = useState("1st Semester");
     const [type, setType] = useState("Question Paper");
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [sendNotification, setSendNotification] = useState(true);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -219,6 +220,33 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                 });
 
                 toast.success("Resource uploaded successfully!");
+
+                // Push Notification
+                if (sendNotification && branches.length > 0) {
+                    try {
+                        const idToken = user ? await user.getIdToken(true) : '';
+                        if (idToken) {
+                            const topics = branches.map(b => `branch_${b}`);
+                            const redirectLink = `/resources?view=resources&branch=${branches[0]}&semester=${semester}`;
+                            await fetch("/api/notifications/send", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": `Bearer ${idToken}`
+                                },
+                                body: JSON.stringify({
+                                    title: `New ${type} Uploaded`,
+                                    body: `${title} for ${subject} (${semester})`,
+                                    topics,
+                                    link: redirectLink,
+                                })
+                            });
+                        }
+                    } catch (err) {
+                        console.error("FCM automated notification dispatch failed:", err);
+                    }
+                }
+
                 resetForm();
             }
         } catch (err) {
@@ -395,6 +423,21 @@ export function UploadForm({ editingResource, onClearEdit }: { editingResource?:
                                 style={{ width: `${uploadProgress}%` }}
                             />
                         </div>
+                    </div>
+                )}
+
+                {!editingResource && (
+                    <div className="flex items-center gap-2 mt-2 select-none">
+                        <input
+                            id="sendNotification"
+                            type="checkbox"
+                            checked={sendNotification}
+                            onChange={(e) => setSendNotification(e.target.checked)}
+                            className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500/20"
+                        />
+                        <label htmlFor="sendNotification" className="text-xs font-medium text-zinc-600 dark:text-zinc-400 cursor-pointer">
+                            Send push notification alert to selected branches
+                        </label>
                     </div>
                 )}
 

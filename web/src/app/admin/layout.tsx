@@ -1,7 +1,8 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/static-components */
 
 import Link from "next/link";
-import { LayoutDashboard, Upload, FileText, Users, Settings, LogOut, Menu, X, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Upload, FileText, Users, Settings, LogOut, Menu, X, ChevronRight, Bell } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -11,6 +12,7 @@ const NAV_ITEMS = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/resources", label: "Resources", icon: Upload },
     { href: "/admin/notices", label: "Notices", icon: FileText },
+    { href: "/admin/notifications", label: "Announcements", icon: Bell },
     { href: "/admin/users", label: "Users", icon: Users },
     { href: "/admin/settings", label: "Settings", icon: Settings },
 ];

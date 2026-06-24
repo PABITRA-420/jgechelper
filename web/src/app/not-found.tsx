@@ -122,7 +122,7 @@ export default function NotFound() {
           variants={itemVariants}
           className="mt-4 font-heading text-2xl font-bold tracking-tight text-zinc-100 sm:text-3xl"
         >
-          You've drifted off course
+          You&apos;ve drifted off course
         </motion.h2>
 
         {/* Descriptive Text */}
@@ -130,7 +130,7 @@ export default function NotFound() {
           variants={itemVariants}
           className="mx-auto mt-4 max-w-md text-sm text-zinc-400 leading-relaxed"
         >
-          The page you are looking for doesn't exist, was renamed, or has slipped into another dimension. Let's get you back on track.
+          The page you are looking for doesn&apos;t exist, was renamed, or has slipped into another dimension. Let&apos;s get you back on track.
         </motion.p>
 
         {/* Premium search bar to quickly locate resources */}

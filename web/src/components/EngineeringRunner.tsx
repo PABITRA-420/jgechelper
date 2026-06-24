@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
@@ -440,6 +441,7 @@ export default function EngineeringRunner() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const gameRef = useRef<GameState | null>(null);
     const animFrameRef = useRef<number>(0);
+    const gameLoopRef = useRef<() => void>(() => {});
     const [score, setScore] = useState(0);
     const [highScore, setHighScore] = useState(0);
     const [gameOver, setGameOver] = useState(false);
@@ -583,8 +585,12 @@ export default function EngineeringRunner() {
         drawPlayer(ctx, game.playerY, game.frame, game.isJumping, game.shakeTimer);
         drawHUD(ctx, game.score, game.speed, W);
 
-        animFrameRef.current = requestAnimationFrame(gameLoop);
+        animFrameRef.current = requestAnimationFrame(gameLoopRef.current);
     }, []);
+
+    useEffect(() => {
+        gameLoopRef.current = gameLoop;
+    }, [gameLoop]);
 
     const handleJump = useCallback(() => {
         const game = gameRef.current;

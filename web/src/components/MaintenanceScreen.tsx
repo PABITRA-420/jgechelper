@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useState } from "react";
 import { Mail, Clock, AlertTriangle, RefreshCw } from "lucide-react";
