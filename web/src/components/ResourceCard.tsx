@@ -18,7 +18,7 @@ interface ResourceProps {
 
 
 const TYPE_CONFIG: Record<string, {
-    Icon: React.ElementType;
+    Icon: React.ComponentType<{ className?: string }>;
     color: string;
     bg: string;
     gradient: string;
@@ -105,44 +105,36 @@ export function ResourceCard({ resource }: { resource: ResourceProps }) {
         setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     };
 
-    const handleDownload = async () => {
+    const handleDownload = () => {
         if (!resource.downloadURL) return;
         try {
             setDownloading(true);
-            const response = await fetch(resource.downloadURL);
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
+            // Build a filename from the URL or fallback to the title
             let filename = resource.title;
             try {
                 const urlParts = resource.downloadURL.split("/");
                 const lastPart = urlParts[urlParts.length - 1];
                 filename = decodeURIComponent(lastPart.split("?")[0]) || resource.title;
             } catch { /* keep title as filename */ }
-            if (!filename.includes(".")) {
-                const mimeExtMap: Record<string, string> = {
-                    "application/pdf": ".pdf",
-                    "image/jpeg": ".jpg",
-                    "image/png": ".png",
-                    "image/webp": ".webp",
-                    "application/msword": ".doc",
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
-                    "application/vnd.ms-excel": ".xls",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
-                    "text/plain": ".txt",
-                };
-                filename += mimeExtMap[blob.type] || "";
-            }
+
+            // Use a direct anchor link — the browser handles the download natively
+            // with its own progress bar instead of buffering the entire file in JS memory.
+            // Vercel Blob supports ?download=1 to force Content-Disposition: attachment.
+            const separator = resource.downloadURL.includes("?") ? "&" : "?";
+            const downloadUrl = `${resource.downloadURL}${separator}download=1`;
+
+            const a = document.createElement("a");
+            a.href = downloadUrl;
             a.download = filename;
+            a.rel = "noopener noreferrer";
             document.body.appendChild(a);
             a.click();
-            window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } catch {
             window.open(resource.downloadURL, "_blank");
         } finally {
-            setDownloading(false);
+            // Small delay so the button doesn't flash instantly
+            setTimeout(() => setDownloading(false), 1000);
         }
     };
 

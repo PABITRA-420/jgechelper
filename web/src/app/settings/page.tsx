@@ -1,13 +1,100 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/context/AuthContext";
-import { User, Mail, Shield, AlertCircle } from "lucide-react";
+import { User, Mail, Shield, AlertCircle, Loader2 } from "lucide-react";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { requestNotificationPermission, getFCMToken } from "@/lib/notification-service";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
-    const { user, role } = useAuth();
+    const { user, role, userBranch } = useAuth();
     const [activeTab, setActiveTab] = useState("profile");
+    const [pushEnabled, setPushEnabled] = useState(false);
+    const [loadingPush, setLoadingPush] = useState(true);
+
+    useEffect(() => {
+        if (!user) return;
+        const fetchPushPref = async () => {
+            try {
+                const userRef = doc(db, "users", user.uid);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    setPushEnabled(userSnap.data().pushEnabled === true);
+                }
+            } catch (err) {
+                console.error("Error loading push preference:", err);
+            } finally {
+                setLoadingPush(false);
+            }
+        };
+        fetchPushPref();
+    }, [user]);
+
+    const handlePushToggle = async () => {
+        if (!user) return;
+        setLoadingPush(true);
+        try {
+            const nextState = !pushEnabled;
+            const idToken = await user.getIdToken(true);
+
+            if (nextState) {
+                const permission = await requestNotificationPermission();
+                if (permission !== "granted") {
+                    toast.error("Notification permission denied. Please allow notifications in browser settings.");
+                    setLoadingPush(false);
+                    return;
+                }
+
+                const token = await getFCMToken();
+                if (!token) {
+                    toast.error("Failed to register push token. Try reloading the page.");
+                    setLoadingPush(false);
+                    return;
+                }
+
+                const res = await fetch("/api/notifications/subscribe", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${idToken}`
+                    },
+                    body: JSON.stringify({ token, branch: userBranch }),
+                });
+
+                if (!res.ok) throw new Error("Subscription request failed");
+
+                const userRef = doc(db, "users", user.uid);
+                await updateDoc(userRef, { pushEnabled: true });
+                setPushEnabled(true);
+                toast.success("Web push notifications enabled!");
+            } else {
+                const token = await getFCMToken();
+                if (token) {
+                    await fetch("/api/notifications/unsubscribe", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({ token }),
+                    });
+                }
+
+                const userRef = doc(db, "users", user.uid);
+                await updateDoc(userRef, { pushEnabled: false });
+                setPushEnabled(false);
+                toast.success("Push notifications disabled.");
+            }
+        } catch (err) {
+            console.error("Error toggling push notifications:", err);
+            toast.error("Failed to update notification settings.");
+        } finally {
+            setLoadingPush(false);
+        }
+    };
 
     if (!user || !role) {
         return (
@@ -116,20 +203,31 @@ export default function SettingsPage() {
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between rounded-lg border border-border bg-background/50 p-4">
                                         <div>
-                                            <p className="font-medium">Email Alerts</p>
-                                            <p className="text-xs text-muted-foreground mt-1">Receive emails about urgent notices</p>
+                                            <p className="font-medium">Web Push Notifications</p>
+                                            <p className="text-xs text-muted-foreground mt-1">Get real-time updates when new notices or study materials are uploaded</p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Coming Soon</span>
-                                            <div className="flex h-5 w-9 cursor-not-allowed items-center rounded-full bg-zinc-300 dark:bg-zinc-700 p-0.5 opacity-50">
-                                                <div className="h-4 w-4 translate-x-0 rounded-full bg-white shadow-sm" />
-                                            </div>
+                                            {loadingPush ? (
+                                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    role="switch"
+                                                    aria-checked={pushEnabled}
+                                                    onClick={handlePushToggle}
+                                                    className={`peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-zinc-300 dark:focus-visible:ring-offset-zinc-950 ${pushEnabled ? "bg-blue-600" : "bg-zinc-200 dark:bg-zinc-800"}`}
+                                                >
+                                                    <span
+                                                        className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${pushEnabled ? "translate-x-5" : "translate-x-0"}`}
+                                                    />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center justify-between rounded-lg border border-border bg-background/50 p-4">
+                                    <div className="flex items-center justify-between rounded-lg border border-border bg-background/50 p-4 opacity-75">
                                         <div>
-                                            <p className="font-medium">App Announcements</p>
-                                            <p className="text-xs text-muted-foreground mt-1">In-app popups and new features</p>
+                                            <p className="font-medium text-muted-foreground">Email Alerts</p>
+                                            <p className="text-xs text-muted-foreground mt-1">Receive emails about urgent notices</p>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Coming Soon</span>

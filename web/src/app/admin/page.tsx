@@ -145,9 +145,11 @@ export default function AdminPage() {
 
     const quickActions = [
         { label: "Upload Resource", desc: "Add study materials", href: "/admin/resources", icon: Upload, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-100 dark:bg-blue-900/20", hoverBorder: "hover:border-blue-300 dark:hover:border-blue-700" },
-        { label: "Post Notice", desc: "Broadcast to students", href: "/admin/notices", icon: Bell, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/20", hoverBorder: "hover:border-amber-300 dark:hover:border-amber-700" },
+        { label: "Post Notice", desc: "Publish notice documents", href: "/admin/notices", icon: FileText, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/20", hoverBorder: "hover:border-amber-300 dark:hover:border-amber-700" },
+        { label: "Send Announcement", desc: "Push notification alert", href: "/admin/notifications", icon: Bell, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-100 dark:bg-indigo-900/20", hoverBorder: "hover:border-indigo-300 dark:hover:border-indigo-700" },
         { label: "Manage Users", desc: "Ban, promote, review", href: "/admin/users", icon: Users, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-100 dark:bg-emerald-900/20", hoverBorder: "hover:border-emerald-300 dark:hover:border-emerald-700" },
         { label: "Settings", desc: "Maintenance & config", href: "/admin/settings", icon: Settings, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/20", hoverBorder: "hover:border-purple-300 dark:hover:border-purple-700" },
+        { label: "View Platform", desc: "Go to student homepage", href: "/", icon: Activity, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-100 dark:bg-rose-900/20", hoverBorder: "hover:border-rose-300 dark:hover:border-rose-700" },
     ];
 
     return (
