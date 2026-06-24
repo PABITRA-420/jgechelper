@@ -39,6 +39,26 @@ export async function POST(request: Request) {
             sentAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
+        // Auto-prune announcements if there are more than 15
+        try {
+            const announcementsSnap = await adminDb.collection("announcements")
+                .orderBy("sentAt", "desc")
+                .get();
+            
+            if (announcementsSnap.size > 15) {
+                const batch = adminDb.batch();
+                // Get all announcements after the 15th one
+                const docsToDelete = announcementsSnap.docs.slice(15);
+                docsToDelete.forEach((doc) => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+            }
+        } catch (pruneErr) {
+            console.error("FCM Send Announcement Prune Error:", pruneErr);
+            // Non-blocking, continue execution even if pruning logs fails
+        }
+
         // Send push notifications
         if (Array.isArray(topics) && topics.length > 0) {
             const sendPromises = topics.map(async (t) => {

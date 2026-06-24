@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Send, Bell, Loader2, Users, Calendar, ArrowUpRight, History } from "lucide-react";
-import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { Send, Bell, Loader2, Users, Calendar, ArrowUpRight, History, Trash2 } from "lucide-react";
+import { collection, query, orderBy, limit, onSnapshot, doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -57,6 +57,29 @@ export default function AdminNotificationsPage() {
 
         return () => unsubscribe();
     }, []);
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this announcement log?")) return;
+        try {
+            await deleteDoc(doc(db, "announcements", id));
+            toast.success("Announcement log deleted.");
+        } catch (err) {
+            console.error("Failed to delete announcement log:", err);
+            toast.error("Failed to delete log.");
+        }
+    };
+
+    const handleClearHistory = async () => {
+        if (!confirm("Are you sure you want to clear the entire broadcast history? This will delete all logged announcements from Firestore.")) return;
+        try {
+            const deletePromises = history.map(ann => deleteDoc(doc(db, "announcements", ann.id)));
+            await Promise.all(deletePromises);
+            toast.success("Broadcast history cleared.");
+        } catch (err) {
+            console.error("Failed to clear broadcast history:", err);
+            toast.error("Failed to clear history.");
+        }
+    };
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -211,11 +234,21 @@ export default function AdminNotificationsPage() {
 
                 {/* Sent History Log */}
                 <div className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-                    <div className="mb-6 flex items-center gap-2 border-b border-border pb-4">
-                        <div className="rounded-lg bg-zinc-100 p-2 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                            <History className="h-5 w-5" />
+                    <div className="mb-6 flex items-center justify-between border-b border-border pb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="rounded-lg bg-zinc-100 p-2 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                                <History className="h-5 w-5" />
+                            </div>
+                            <h2 className="text-lg font-semibold">Broadcast History</h2>
                         </div>
-                        <h2 className="text-lg font-semibold">Broadcast History</h2>
+                        {history.length > 0 && (
+                            <button
+                                onClick={handleClearHistory}
+                                className="text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                            >
+                                Clear All
+                            </button>
+                        )}
                     </div>
 
                     <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1">
@@ -233,12 +266,21 @@ export default function AdminNotificationsPage() {
                             </div>
                         ) : (
                             history.map((ann) => (
-                                <div key={ann.id} className="relative flex flex-col gap-1.5 rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 transition-all hover:bg-zinc-50 dark:border-zinc-800/80 dark:bg-zinc-900/50">
+                                <div key={ann.id} className="relative flex flex-col gap-1.5 rounded-xl border border-zinc-100 bg-zinc-50/50 p-4 transition-all hover:bg-zinc-100 dark:border-zinc-800/80 dark:bg-zinc-900/50 dark:hover:bg-zinc-800/40">
                                     <div className="flex items-start justify-between gap-4">
                                         <h3 className="font-semibold text-sm line-clamp-1">{ann.title}</h3>
-                                        <span className="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
-                                            {ann.topic === "global" ? "Global" : ann.topic?.replace("branch_", "") || "Custom"}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-500/10 dark:text-blue-400">
+                                                {ann.topic === "global" ? "Global" : ann.topic?.replace("branch_", "") || "Custom"}
+                                            </span>
+                                            <button
+                                                onClick={() => handleDelete(ann.id)}
+                                                className="text-muted-foreground hover:text-red-500 rounded p-1 hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-colors"
+                                                title="Delete announcement"
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
                                     </div>
                                     <p className="text-xs text-muted-foreground line-clamp-2">{ann.body}</p>
                                     
