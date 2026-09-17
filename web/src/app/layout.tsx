@@ -19,6 +19,28 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://jgechelper.vercel.app'),
   title: "JGECHelper - Your Academic Companion",
   description: "The ultimate resource hub for JGEC students.",
+  keywords: [
+    "JGECHelper",
+    "JGEC",
+    "Jalpaiguri Government Engineering College",
+    "JGEC resources",
+    "JGEC notices",
+    "engineering study materials",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   openGraph: {
     title: "JGECHelper - Your Academic Companion",
     description: "The ultimate resource hub for JGEC students.",
