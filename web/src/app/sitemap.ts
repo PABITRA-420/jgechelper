@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl = "https://jgechelper.vercel.app";
+const siteUrl = "https://jgechelper-web.vercel.app";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
