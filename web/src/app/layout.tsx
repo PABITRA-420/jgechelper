@@ -16,7 +16,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://jgechelper.vercel.app'),
+  metadataBase: new URL('https://jgechelper-web.vercel.app'),
   title: "JGECHelper - Your Academic Companion",
   description: "The ultimate resource hub for JGEC students.",
   keywords: [
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "JGECHelper - Your Academic Companion",
     description: "The ultimate resource hub for JGEC students.",
-    url: "https://jgechelper.vercel.app", // Fallback, normally absolute URL
+    url: "https://jgechelper-web.vercel.app", // Fallback, normally absolute URL
     siteName: "JGECHelper",
     images: [
       {
