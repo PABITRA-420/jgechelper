@@ -6,7 +6,7 @@ JGECHelper is an academic resource hub designed specifically for students to sha
 
 ## 📸 Screenshot
 
-![JGECHelper Screenshot](./public/screenshot.png)
+![JGECHelper Screenshot](./public/Capture.JPG)
 
 ## 🚀 Key Features
 
@@ -39,6 +39,7 @@ web/
 │   └── lib/           # Utility functions and configuration
 ├── public/            # Static assets
 └── globals.css        # Global styles and theme variables
+```
 
 ## 📝 License
 
